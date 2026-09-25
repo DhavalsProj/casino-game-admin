@@ -1,6 +1,7 @@
 import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../../../services/auth.service';
 
 export interface Language {
   id: string;
@@ -49,7 +50,11 @@ export class UserDropdownComponent implements OnInit {
     },
   ];
 
-  constructor(private elementRef: ElementRef) {}
+  constructor(private elementRef: ElementRef, public authService: AuthService) {}
+
+  get currentUser() {
+    return this.authService.currentUser;
+  }
 
   ngOnInit(): void {
     const savedDir = localStorage.getItem('dir');
@@ -77,6 +82,11 @@ export class UserDropdownComponent implements OnInit {
   closeDropdown(): void {
     this.isOpen = false;
     this.subDropdownOpen = false;
+  }
+
+  signOut(): void {
+    this.closeDropdown();
+    this.authService.logout();
   }
 
   toggleSubDropdown(event: Event): void {

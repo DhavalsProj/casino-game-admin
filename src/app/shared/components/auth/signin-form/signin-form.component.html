@@ -16,7 +16,7 @@
           Sign In
         </h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Enter your email and password to sign in!
+          Sign in with your account identifier and password.
         </p>
       </div>
 
@@ -79,12 +79,13 @@
       <!-- Form -->
       <form (ngSubmit)="onSignIn()" class="space-y-6">
         <div>
-          <app-label>Email <span class="text-error-500">*</span></app-label>
+          <app-label>Identifier <span class="text-error-500">*</span></app-label>
           <app-input-field
-            type="email"
-            placeholder="info@gmail.com"
+            type="text"
+            placeholder="Unique ID, mobile, or superadmin"
             [value]="email"
             name="email"
+            (valueChange)="email = $event.toString()"
             class="form-input"
             required
           />
@@ -98,6 +99,7 @@
               placeholder="Enter your password"
               [value]="password"
               name="password"
+              (valueChange)="password = $event.toString()"
               class="form-input"
               className="ltr:pr-11 rtl:pl-11"
               required
@@ -133,10 +135,14 @@
         <app-button
           className="w-full"
           size="sm"
+          [disabled]="isSubmitting"
           (btnClick)="onSignIn()"
         >
-          Sign in
+          {{ isSubmitting ? 'Signing in...' : 'Sign in' }}
         </app-button>
+        @if (errorMessage) {
+          <p class="text-theme-sm text-error-500">{{ errorMessage }}</p>
+        }
       </form>
 
       <div class="mt-5">

@@ -1,0 +1,113 @@
+<div class="space-y-6">
+  <div class="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-end">
+    <div class="min-w-0">
+      <p class="text-theme-sm text-gray-500 dark:text-gray-400">Operations</p>
+      <h1 class="mt-1 text-title-sm font-semibold text-gray-800 dark:text-white/90">User Management</h1>
+      <p class="mt-2 text-theme-sm text-gray-500 dark:text-gray-400">Manage users and agents with role-aware access.</p>
+    </div>
+    @if (userService.canCreate) {
+      <a routerLink="/users/create" class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 sm:w-auto">
+        <span class="text-lg leading-none">+</span>
+        Create {{ isAdmin ? 'user or agent' : 'user' }}
+      </a>
+    }
+  </div>
+
+  @if (successMessage) {
+    <div class="flex items-center justify-between rounded-lg border border-success-200 bg-success-25 px-4 py-3 text-theme-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400">
+      <span>{{ successMessage }}</span>
+      <button type="button" class="font-medium underline" (click)="successMessage = ''">Dismiss</button>
+    </div>
+  }
+  @if (errorMessage) {
+    <div class="rounded-lg border border-error-200 bg-error-25 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">{{ errorMessage }}</div>
+  }
+
+  <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="flex flex-col items-stretch justify-between gap-4 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:px-5 dark:border-gray-800">
+      <div>
+        <h2 class="font-semibold text-gray-800 dark:text-white/90">Directory</h2>
+        <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">{{ filteredUsers.length }} record{{ filteredUsers.length === 1 ? '' : 's' }} visible</p>
+      </div>
+      <div class="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
+        @if (isAdmin) {
+          <label class="flex items-center justify-between gap-2 text-theme-sm text-gray-500 dark:text-gray-400 sm:justify-start">
+            <span>Type</span>
+            <select [(ngModel)]="filter" (ngModelChange)="loadUsers()" class="h-10 min-w-0 flex-1 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-700 outline-none focus:border-brand-500 dark:border-gray-700 dark:text-gray-300 sm:flex-none">
+              <option value="all">All</option>
+              <option value="user">User</option>
+              <option value="agent">Agent</option>
+            </select>
+          </label>
+        }
+        <div class="flex gap-3">
+          <input [(ngModel)]="search" type="search" placeholder="Search directory" class="h-10 min-w-0 flex-1 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-brand-500 dark:border-gray-700 dark:text-gray-300 sm:w-52 sm:flex-none" />
+          <button type="button" aria-label="Refresh users" title="Refresh users" (click)="loadUsers()" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5">↻</button>
+        </div>
+      </div>
+    </div>
+
+    @if (isLoading) {
+      <div class="px-5 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">Loading users...</div>
+    } @else if (filteredUsers.length === 0) {
+      <div class="px-5 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">No users match the current view.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="min-w-[920px] text-start text-theme-sm">
+          <thead class="bg-gray-50 dark:bg-white/[0.02]">
+            <tr class="text-gray-500 dark:text-gray-400">
+              <th class="px-5 py-3 font-medium">Name</th>
+              <th class="px-5 py-3 font-medium">Mobile</th>
+              <th class="px-5 py-3 font-medium">Type</th>
+              <th class="px-5 py-3 font-medium">Agent</th>
+              <th class="px-5 py-3 font-medium">Unique ID</th>
+              <th class="px-5 py-3 font-medium">Created</th>
+              <th class="px-5 py-3 font-medium">Status</th>
+              <th class="px-5 py-3 text-end font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            @for (user of filteredUsers; track user.id) {
+              <tr class="text-gray-700 dark:text-gray-300">
+                <td class="whitespace-nowrap px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ user.name }}</td>
+                <td class="whitespace-nowrap px-5 py-4">{{ user.mobile }}</td>
+                <td class="px-5 py-4"><span class="rounded-full px-2.5 py-1 text-theme-xs font-medium" [ngClass]="user.type === 'agent' ? 'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400' : 'bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400'">{{ user.type | titlecase }}</span></td>
+                <td class="whitespace-nowrap px-5 py-4">{{ user.agentName || '—' }}</td>
+                <td class="whitespace-nowrap px-5 py-4 font-medium">{{ user.uniqueId }}</td>
+                <td class="whitespace-nowrap px-5 py-4">{{ user.createdAt | date: 'dd MMM yyyy' }}</td>
+                <td class="px-5 py-4"><span [ngClass]="user.status === 'Active' ? 'text-success-600' : 'text-gray-500'">{{ user.status }}</span></td>
+                <td class="whitespace-nowrap px-5 py-4 text-end">
+                  <div class="flex flex-wrap justify-end gap-2">
+                    <button type="button" (click)="viewUser(user)" class="rounded-md border border-gray-200 px-2.5 py-1.5 text-theme-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">View</button>
+                    @if (isAdmin) {
+                      <button type="button" (click)="editUser(user)" class="rounded-md border border-brand-200 px-2.5 py-1.5 text-theme-xs font-medium text-brand-600 hover:bg-brand-50 dark:border-brand-500/30 dark:text-brand-400 dark:hover:bg-brand-500/10">Edit</button>
+                      <button type="button" (click)="deleteUser(user)" class="rounded-md border border-error-200 px-2.5 py-1.5 text-theme-xs font-medium text-error-600 hover:bg-error-50 dark:border-error-500/30 dark:text-error-400 dark:hover:bg-error-500/10">Delete</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (selectedUser) {
+  <div class="fixed inset-0 z-99999 flex items-center justify-center bg-gray-950/40 px-4" (click)="closeDetails()">
+    <div class="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-4 shadow-theme-xl dark:bg-gray-900 sm:p-6" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between">
+        <h2 class="text-theme-xl font-semibold text-gray-800 dark:text-white/90">User details</h2>
+        <button type="button" aria-label="Close details" title="Close details" (click)="closeDetails()" class="text-2xl text-gray-400 hover:text-gray-700 dark:hover:text-white">×</button>
+      </div>
+      <dl class="mt-5 space-y-3 text-theme-sm">
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Name</dt><dd class="font-medium text-gray-800 dark:text-white/90">{{ selectedUser.name }}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Mobile</dt><dd class="font-medium text-gray-800 dark:text-white/90">{{ selectedUser.mobile }}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Type</dt><dd class="font-medium text-gray-800 dark:text-white/90">{{ selectedUser.type | titlecase }}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Agent</dt><dd class="font-medium text-gray-800 dark:text-white/90">{{ selectedUser.agentName || '—' }}</dd></div>
+        <div class="flex justify-between gap-4"><dt class="text-gray-500">Unique ID</dt><dd class="font-medium text-gray-800 dark:text-white/90">{{ selectedUser.uniqueId }}</dd></div>
+      </dl>
+    </div>
+  </div>
+}

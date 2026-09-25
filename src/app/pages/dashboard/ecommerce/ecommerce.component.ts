@@ -5,10 +5,15 @@ import { MonthlyTargetComponent } from '../../../shared/components/ecommerce/mon
 import { StatisticsChartComponent } from '../../../shared/components/ecommerce/statics-chart/statics-chart.component';
 import { DemographicCardComponent } from '../../../shared/components/ecommerce/demographic-card/demographic-card.component';
 import { RecentOrdersComponent } from '../../../shared/components/ecommerce/recent-orders/recent-orders.component';
+import { AuthService } from '../../../shared/services/auth.service';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-ecommerce',
   imports: [
+    CommonModule,
+    RouterModule,
     EcommerceMetricsComponent,
     MonthlySalesChartComponent,
     MonthlyTargetComponent,
@@ -18,4 +23,6 @@ import { RecentOrdersComponent } from '../../../shared/components/ecommerce/rece
   ],
   templateUrl: './ecommerce.component.html',
 })
-export class EcommerceComponent {}
+export class EcommerceComponent {
+  constructor(public authService: AuthService) {}
+}
