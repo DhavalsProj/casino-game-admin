@@ -27,7 +27,7 @@ export class SigninFormComponent {
   showPassword = false;
   isChecked = false;
 
-  email = '';
+  identifier = '';
   password = '';
   errorMessage = '';
   isSubmitting = false;
@@ -39,14 +39,14 @@ export class SigninFormComponent {
   }
 
   onSignIn() {
-    if (!this.email.trim() || !this.password) {
+    if (!this.identifier.trim() || !this.password) {
       this.errorMessage = 'Enter your identifier and password.';
       return;
     }
 
     this.isSubmitting = true;
     this.errorMessage = '';
-    this.authService.login(this.email, this.password).subscribe({
+    this.authService.login(this.identifier, this.password).subscribe({
       next: () => {
         this.isSubmitting = false;
         void this.router.navigate(['/']);

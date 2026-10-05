@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, catchError, map, of, tap, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, map, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { UserRole } from './user.service';
 
@@ -52,19 +52,10 @@ export class AuthService {
     const normalizedIdentifier = identifier.trim();
 
     return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, {
-      identifier: normalizedIdentifier,
+      id: normalizedIdentifier,
       password,
     }).pipe(
       catchError((error: HttpErrorResponse) => {
-        if (error.status !== 0) {
-          return throwError(() => new Error(this.extractLoginError(error)));
-        }
-
-        const fallbackSession = this.createDemoSession(normalizedIdentifier, password);
-        if (fallbackSession) {
-          return of(fallbackSession);
-        }
-
         return throwError(() => new Error(this.extractLoginError(error)));
       }),
       map((response) => ({
@@ -86,61 +77,6 @@ export class AuthService {
     void this.router.navigate(['/signin']);
   }
 
-  private createDemoSession(identifier: string, password: string): LoginResponse | null {
-    const normalizedIdentifier = identifier.toLowerCase();
-    const normalizedPassword = password.trim();
-
-    const demoUsers: Record<string, { role: UserRole; user: LoginResponse['user'] }> = {
-      superadmin: {
-        role: 'superadmin',
-        user: {
-          id: 1,
-          name: 'Super Admin',
-          mobile: '+1-555-0100',
-          type: 'superadmin',
-          agentId: null,
-          uniqueId: 'SUP-1001',
-        },
-      },
-      admin: {
-        role: 'admin',
-        user: {
-          id: 2,
-          name: 'Admin User',
-          mobile: '+1-555-0101',
-          type: 'admin',
-          agentId: null,
-          uniqueId: 'ADM-2001',
-        },
-      },
-      agent: {
-        role: 'agent',
-        user: {
-          id: 3,
-          name: 'Agent User',
-          mobile: '+1-555-0102',
-          type: 'agent',
-          agentId: 'AG-5001',
-          uniqueId: 'AGT-3001',
-        },
-      },
-    };
-
-    if (!normalizedPassword) {
-      return null;
-    }
-
-    const matchingUser = demoUsers[normalizedIdentifier];
-    if (!matchingUser) {
-      return null;
-    }
-
-    return {
-      accessToken: 'demo-access-token',
-      user: { ...matchingUser.user, type: matchingUser.role },
-    };
-  }
-
   private extractLoginError(error: HttpErrorResponse): string {
     if (error?.error && typeof error.error === 'object' && 'message' in error.error) {
       const message = error.error.message;
@@ -150,7 +86,7 @@ export class AuthService {
     }
 
     if (error?.status === 0) {
-      return 'The login service is not available. Try the demo credentials: superadmin / admin123.';
+      return 'The login service is not available. Please try again later.';
     }
 
     return 'Unable to sign in. Please check your identifier and password.';
