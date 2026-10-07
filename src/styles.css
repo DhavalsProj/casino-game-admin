@@ -706,11 +706,6 @@ html.dark full-calendar,
   background-color: transparent !important;
 }
 
-.dark .fc .fc-daygrid-day.fc-day-today .fc-scrollgrid-sync-inner,
-.dark .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame {
-  background-color: rgba(255, 255, 255, 0.03) !important;
-}
-
 .dark .fc .fc-col-header-cell,
 .dark .fc th {
   background-color: var(--color-gray-900, #111827) !important;
@@ -762,9 +757,6 @@ html.dark full-calendar,
 .fc .fc-daygrid-day {
   @apply p-2;
 }
-.fc .fc-daygrid-day.fc-day-today .fc-scrollgrid-sync-inner {
-  @apply rounded-sm bg-gray-100 dark:bg-white/[0.03];
-}
 .fc .fc-daygrid-day-number {
   @apply !p-3 text-sm font-medium text-gray-700 dark:text-gray-400;
 }
@@ -784,14 +776,113 @@ html.dark full-calendar,
 .event-fc-color .fc-event-title {
   @apply p-0 text-sm font-normal text-gray-700 dark:text-white!;
 }
-.fc-daygrid-event-dot {
-  @apply w-1 h-5 ml-0 mr-3 border-none rounded-sm;
-}
 .fc-event {
   @apply focus:shadow-none;
 }
-.fc-daygrid-event.fc-event-start {
-  @apply !ml-3;
+.custom-calendar .fc-daygrid-day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-height: 0;
+  margin-block: 0.35rem 0.5rem;
+}
+.custom-calendar .fc-daygrid-day-events > .fc-daygrid-event-harness {
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0 !important;
+}
+.custom-calendar .fc-daygrid-event,
+.custom-calendar .fc-daygrid-event.fc-event-start {
+  display: flex;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.custom-calendar .fc-daygrid-event-dot,
+.custom-calendar .fc-daygrid-dot-event .fc-daygrid-event-dot {
+  display: none !important;
+}
+.custom-calendar .fc-event:focus,
+.custom-calendar .fc-event:focus-visible,
+.custom-calendar .fc-event-selected {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.custom-calendar .fc-daygrid-event .fc-event-main {
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+}
+.calendar-event-bar {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: filter 120ms ease;
+}
+.custom-calendar .fc-daygrid-event:hover .calendar-event-bar,
+.custom-calendar .fc-daygrid-event:focus-visible .calendar-event-bar {
+  filter: brightness(1.12);
+}
+.custom-calendar .fc-daygrid-event:focus-visible {
+  outline: none;
+}
+.calendar-event-primary {
+  border-color: var(--color-brand-500, #465fff);
+  background-color: color-mix(in srgb, var(--color-brand-500, #465fff) 16%, transparent);
+  color: var(--color-brand-700, #3538cd);
+}
+.dark .calendar-event-primary {
+  border-color: color-mix(in srgb, var(--color-brand-500, #465fff) 35%, transparent);
+  color: var(--color-brand-300, #aab4ff);
+}
+.calendar-event-purple {
+  border-color: var(--color-purple-500, #a855f7);
+  background-color: color-mix(in srgb, var(--color-purple-500, #a855f7) 15%, transparent);
+  color: var(--color-purple-700, #7e22ce);
+}
+.dark .calendar-event-purple {
+  border-color: color-mix(in srgb, var(--color-purple-500, #a855f7) 35%, transparent);
+  color: var(--color-purple-300, #d8b4fe);
+}
+.calendar-event-warning {
+  border-color: var(--color-orange-500, #f97316);
+  background-color: color-mix(in srgb, var(--color-orange-500, #f97316) 14%, transparent);
+  color: var(--color-orange-700, #c2410c);
+}
+.dark .calendar-event-warning {
+  border-color: color-mix(in srgb, var(--color-orange-500, #f97316) 35%, transparent);
+  color: var(--color-orange-300, #fdba74);
+}
+.calendar-event-success {
+  border-color: var(--color-success-500, #22c55e);
+  background-color: color-mix(in srgb, var(--color-success-500, #22c55e) 14%, transparent);
+  color: var(--color-success-700, #15803d);
+}
+.dark .calendar-event-success {
+  border-color: color-mix(in srgb, var(--color-success-500, #22c55e) 35%, transparent);
+  color: var(--color-success-300, #86efac);
+}
+.calendar-event-danger {
+  border-color: var(--color-error-500, #ef4444);
+  background-color: color-mix(in srgb, var(--color-error-500, #ef4444) 14%, transparent);
+  color: var(--color-error-700, #b91c1c);
+}
+.dark .calendar-event-danger {
+  border-color: color-mix(in srgb, var(--color-error-500, #ef4444) 35%, transparent);
+  color: var(--color-error-300, #fca5a5);
+}
+.custom-calendar .fc-daygrid-more-link {
+  display: none !important;
 }
 .event-fc-color.fc-bg-success {
   @apply border-success-50 bg-success-50;
@@ -804,18 +895,6 @@ html.dark full-calendar,
 }
 .event-fc-color.fc-bg-warning {
   @apply border-orange-50 bg-orange-50;
-}
-.event-fc-color.fc-bg-success .fc-daygrid-event-dot {
-  @apply bg-success-500;
-}
-.event-fc-color.fc-bg-danger .fc-daygrid-event-dot {
-  @apply bg-error-500;
-}
-.event-fc-color.fc-bg-primary .fc-daygrid-event-dot {
-  @apply bg-brand-500;
-}
-.event-fc-color.fc-bg-warning .fc-daygrid-event-dot {
-  @apply bg-orange-500;
 }
 .fc-direction-ltr .fc-timegrid-slot-label-frame {
   @apply px-3 py-1.5 text-left text-sm font-medium text-gray-500 dark:text-gray-400;

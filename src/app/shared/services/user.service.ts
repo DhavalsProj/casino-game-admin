@@ -75,7 +75,14 @@ export class UserService {
     }
     return this.http.get<ApiUser[]>(`${this.apiUrl}/users`, { params }).pipe(
       timeout({ first: 15000 }),
-      map((users) => users.map((user) => this.toManagedUser(user))),
+      map((users) => users
+        .map((user) => this.toManagedUser(user))
+        .sort((left, right) => {
+          const leftCreatedAt = Date.parse(left.createdAt);
+          const rightCreatedAt = Date.parse(right.createdAt);
+          if (!Number.isFinite(leftCreatedAt) || !Number.isFinite(rightCreatedAt)) return 0;
+          return rightCreatedAt - leftCreatedAt;
+        })),
     );
   }
 
@@ -88,6 +95,7 @@ export class UserService {
 
   getUserById(id: number): Observable<ManagedUser> {
     return this.http.post<ApiUser>(`${this.apiUrl}/users/get-by-id`, { id }).pipe(
+      timeout({ first: 15000 }),
       map((user) => this.toManagedUser(user)),
     );
   }
@@ -102,7 +110,7 @@ export class UserService {
     );
   }
 
-  updateUser(id: number, changes: Pick<ManagedUser, 'name' | 'mobile' | 'status'>): Observable<ManagedUser> {
+  updateUser(id: number, changes: Pick<ManagedUser, 'name' | 'mobile'>): Observable<ManagedUser> {
     return this.http.patch<ApiUser>(`${this.apiUrl}/users/${id}`, {
       name: changes.name,
       mobile: changes.mobile,

@@ -21,6 +21,7 @@ import { CalenderComponent } from './pages/calender/calender.component';
 import { UserManagementComponent } from './pages/users/user-management/user-management.component';
 import { UserCreateComponent } from './pages/users/user-create/user-create.component';
 import { WalletManagementComponent } from './pages/wallet/wallet-management/wallet-management.component';
+import { WalletTransferListComponent } from './pages/wallet/wallet-transfer-list/wallet-transfer-list.component';
 import { TransactionHistoryComponent } from './pages/transactions/transaction-history/transaction-history.component';
 import { authGuard } from './shared/guards/auth.guard';
 
@@ -34,107 +35,168 @@ export const routes: Routes = [
         path: '',
         component: EcommerceComponent,
         pathMatch: 'full',
-        title:
-          'Angular Ecommerce Dashboard | TailAdmin - Angular Admin Dashboard Template',
+        title: 'CasinoAdmin',
       },
       {
         path:'calendar',
         component:CalenderComponent,
-        title:'Angular Calender | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'profile',
         component:ProfileComponent,
-        title:'Angular Profile Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
+      },
+      {
+        path: 'profile/edit',
+        component: UserCreateComponent,
+        canActivate: [authGuard],
+        title: 'CasinoAdmin'
       },
       {
         path:'users',
         component:UserManagementComponent,
         canActivate: [authGuard],
         data: { roles: ['superadmin', 'admin', 'agent'] },
-        title:'User Management | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
+      },
+      {
+        path:'user-profile',
+        component:UserManagementComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent'] },
+        title: 'CasinoAdmin'
+      },
+      {
+        path:'wallet-transfer/manage',
+        component:WalletTransferListComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent'] },
+        title: 'CasinoAdmin'
       },
       {
         path:'users/create',
         component:UserCreateComponent,
         canActivate: [authGuard],
         data: { roles: ['superadmin', 'admin', 'agent'] },
-        title:'Create User | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
+      },
+      {
+        path:'user-profile/create',
+        component:UserCreateComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent'] },
+        title: 'CasinoAdmin'
+      },
+      {
+        path:'users/edit/:id',
+        component:UserCreateComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin'] },
+        title: 'CasinoAdmin'
+      },
+      {
+        path:'user-profile/edit/:id',
+        component:UserCreateComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin'] },
+        title: 'CasinoAdmin'
+      },
+      {
+        path:'wallet-transfer/create',
+        component:WalletManagementComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent'] },
+        title: 'CasinoAdmin'
+      },
+      {
+        path:'wallet-transfer',
+        component:WalletTransferListComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
+        title: 'CasinoAdmin'
       },
       {
         path: 'wallet',
         component: WalletManagementComponent,
         canActivate: [authGuard],
         data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'Wallet Points | TailAdmin - Angular Admin Dashboard Template',
+        title: 'CasinoAdmin',
+      },
+      {
+        path: 'transactions/manage',
+        component: TransactionHistoryComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
+        title: 'CasinoAdmin',
       },
       {
         path: 'transactions',
         component: TransactionHistoryComponent,
         canActivate: [authGuard],
         data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'Transaction History | TailAdmin - Angular Admin Dashboard Template',
+        title: 'CasinoAdmin',
       },
       {
         path:'form-elements',
         component:FormElementsComponent,
-        title:'Angular Form Elements Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'basic-tables',
         component:BasicTablesComponent,
-        title:'Angular Basic Tables Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'blank',
         component:BlankComponent,
-        title:'Angular Blank Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       // support tickets
       {
         path:'invoice',
         component:InvoicesComponent,
-        title:'Angular Invoice Details Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'line-chart',
         component:LineChartComponent,
-        title:'Angular Line Chart Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'bar-chart',
         component:BarChartComponent,
-        title:'Angular Bar Chart Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'alerts',
         component:AlertsComponent,
-        title:'Angular Alerts Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'avatars',
         component:AvatarElementComponent,
-        title:'Angular Avatars Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'badge',
         component:BadgesComponent,
-        title:'Angular Badges Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'buttons',
         component:ButtonsComponent,
-        title:'Angular Buttons Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'images',
         component:ImagesComponent,
-        title:'Angular Images Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
       {
         path:'videos',
         component:VideosComponent,
-        title:'Angular Videos Dashboard | TailAdmin - Angular Admin Dashboard Template'
+        title: 'CasinoAdmin'
       },
     ]
   },
@@ -142,17 +204,17 @@ export const routes: Routes = [
   {
     path:'signin',
     component:SignInComponent,
-    title:'Angular Sign In Dashboard | TailAdmin - Angular Admin Dashboard Template'
+    title: 'CasinoAdmin'
   },
   {
     path:'signup',
     component:SignUpComponent,
-    title:'Angular Sign Up Dashboard | TailAdmin - Angular Admin Dashboard Template'
+    title: 'CasinoAdmin'
   },
   // error pages
   {
     path:'**',
     component:NotFoundComponent,
-    title:'Angular NotFound Dashboard | TailAdmin - Angular Admin Dashboard Template'
+    title: 'CasinoAdmin'
   },
 ];

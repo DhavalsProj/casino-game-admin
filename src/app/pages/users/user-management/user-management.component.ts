@@ -2,9 +2,10 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { Subscription, TimeoutError } from 'rxjs';
 import { UserService, ManagedUser, ManagedUserType } from '../../../shared/services/user.service';
+import { UserFeedbackService } from '../../../shared/services/user-feedback.service';
 
 @Component({
   selector: 'app-user-management',
@@ -15,7 +16,6 @@ import { UserService, ManagedUser, ManagedUserType } from '../../../shared/servi
 export class UserManagementComponent implements OnInit, OnDestroy {
   users: ManagedUser[] = [];
   filteredUsers: ManagedUser[] = [];
-  selectedUser: ManagedUser | null = null;
   filter: 'all' | ManagedUserType = 'all';
   search = '';
   readonly pageSize = 25;
@@ -23,14 +23,31 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   isLoading = true;
   errorMessage = '';
   successMessage = '';
+  createdCredentials: { user: ManagedUser; password: string } | null = null;
+  selectedUser: ManagedUser | null = null;
   private usersRequest: Subscription | null = null;
 
   constructor(
     public userService: UserService,
+    private readonly userFeedbackService: UserFeedbackService,
     private readonly changeDetector: ChangeDetectorRef,
+    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
+    const navigationState = this.router.getCurrentNavigation()?.extras.state ?? window.history.state;
+    this.successMessage = navigationState['successMessage'] ?? '';
+    const creationFeedback = this.userFeedbackService.consumeCreationFeedback();
+    const createdUser = creationFeedback?.user ?? navigationState['createdUser'] as ManagedUser | undefined;
+    if (creationFeedback) {
+      this.successMessage = 'User created successfully.';
+      this.createdCredentials = creationFeedback;
+    }
+    if (createdUser) {
+      this.users = [createdUser];
+      this.updateFilteredUsers();
+      this.isLoading = false;
+    }
     this.loadUsers();
   }
 
@@ -40,6 +57,10 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   get isAdmin(): boolean {
     return this.userService.canManage;
+  }
+
+  get isManagementPage(): boolean {
+    return this.router.url.split('?')[0] === '/users';
   }
 
   get pageCount(): number {
@@ -74,7 +95,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   loadUsers(): void {
     this.usersRequest?.unsubscribe();
-    this.isLoading = true;
+    this.isLoading = this.users.length === 0;
     this.errorMessage = '';
     this.usersRequest = this.userService.getUsers(this.filter).subscribe({
       next: (users) => {
@@ -94,39 +115,36 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  viewUser(user: ManagedUser): void {
-    this.selectedUser = { ...user };
+  closeCreatedCredentials(): void {
+    this.createdCredentials = null;
   }
 
-  closeDetails(): void {
-    this.selectedUser = null;
+  viewUser(user: ManagedUser): void {
+    this.selectedUser = user;
   }
 
   editUser(user: ManagedUser): void {
-    const name = window.prompt('Name', user.name);
-    const mobile = window.prompt('Mobile number', user.mobile);
-    if (!name || !mobile) {
-      return;
-    }
-    this.userService.updateUser(user.id, { name, mobile, status: user.status }).subscribe({
-      next: () => {
-        this.successMessage = 'User updated successfully.';
-        this.loadUsers();
-      },
-      error: (error: Error) => this.errorMessage = error.message,
-    });
+    void this.router.navigate(['/users/edit', user.id], { state: { previewUser: user } });
   }
 
   deleteUser(user: ManagedUser): void {
-    if (!window.confirm(`Delete ${user.name}? This action cannot be undone.`)) {
+    if (!this.userService.canManage || !window.confirm(`Delete ${user.name}? This action cannot be undone.`)) {
       return;
     }
+
+    this.errorMessage = '';
+    this.successMessage = '';
     this.userService.deleteUser(user.id).subscribe({
       next: () => {
-        this.successMessage = 'User deleted successfully.';
+        this.successMessage = `${user.name} was deleted successfully.`;
         this.loadUsers();
       },
-      error: (error: Error) => this.errorMessage = error.message,
+      error: (error: unknown) => {
+        this.errorMessage = error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
+          ? error.error.message
+          : 'Unable to delete this user. Please try again.';
+        this.changeDetector.detectChanges();
+      },
     });
   }
 

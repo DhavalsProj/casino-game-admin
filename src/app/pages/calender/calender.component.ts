@@ -1,18 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
-import { CalendarOptions, DateSelectInfo, EventClickInfo, EventInput } from 'fullcalendar';
+import { CalendarOptions, EventInput } from 'fullcalendar';
 import dayGridPlugin from 'fullcalendar/daygrid';
 import interactionPlugin from 'fullcalendar/interaction';
 import multiMonthPlugin from 'fullcalendar/multimonth';
 import themePlugin from 'fullcalendar/themes/classic';
 import timeGridPlugin from 'fullcalendar/timegrid';
-import { ModalComponent } from '../../shared/components/ui/modal/modal.component';
+import { ApplicationDataService, ApplicationDataSnapshot } from '../../shared/services/application-data.service';
 
 export interface CalendarEvent extends EventInput {
   extendedProps: {
     calendar: string;
+    source: 'user' | 'agent' | 'wallet-request' | 'transaction';
+    dateKey: string;
+    occurredAt: string;
+    hasTime: boolean;
+    details: { label: string; value: string }[];
   };
 }
 
@@ -21,9 +25,7 @@ export interface CalendarEvent extends EventInput {
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     FullCalendarModule,
-    ModalComponent
   ],
   templateUrl: './calender.component.html',
   styles: ``
@@ -33,12 +35,10 @@ export class CalenderComponent implements OnInit {
 
   events: CalendarEvent[] = [];
   selectedEvent: CalendarEvent | null = null;
-  eventTitle = '';
-  eventStartDate = '';
-  eventEndDate = '';
-  eventLevel = 'Primary';
-  isOpen = false;
+  isEventDetailsOpen = false;
   isMobile = false;
+  isLoading = true;
+  errorMessage = '';
 
   currentView = 'dayGridMonth';
 
@@ -49,43 +49,19 @@ export class CalenderComponent implements OnInit {
     { key: 'timeGridDay', label: 'Day' },
   ];
 
-  calendarsEvents = [
-    { key: 'Danger', value: 'danger' },
-    { key: 'Success', value: 'success' },
-    { key: 'Primary', value: 'primary' },
-    { key: 'Warning', value: 'warning' }
-  ];
-
   calendarOptions!: CalendarOptions;
 
-  constructor(private elRef: ElementRef) {}
+  constructor(
+    private readonly elRef: ElementRef,
+    private readonly applicationData: ApplicationDataService,
+    private readonly changeDetector: ChangeDetectorRef,
+  ) {}
 
   ngOnInit() {
     this.checkMobile();
 
-    this.events = [
-      {
-        id: '1',
-        title: 'Event Conf.',
-        start: new Date().toISOString().split('T')[0],
-        extendedProps: { calendar: 'Danger' }
-      },
-      {
-        id: '2',
-        title: 'Meeting',
-        start: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-        extendedProps: { calendar: 'Success' }
-      },
-      {
-        id: '3',
-        title: 'Workshop',
-        start: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-        end: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-        extendedProps: { calendar: 'Primary' }
-      }
-    ];
-
     this.initCalendarOptions();
+    this.loadApplicationEvents();
   }
 
   @HostListener('window:resize')
@@ -120,7 +96,7 @@ export class CalenderComponent implements OnInit {
 
       // Toolbar Header configuration
       headerToolbar: {
-        start: 'prev,next addEventButton',
+        start: 'prev,next',
         center: 'title',
         end: ''
       },
@@ -156,12 +132,6 @@ export class CalenderComponent implements OnInit {
           className:
             'flex size-9! sm:size-10! p-0! items-center justify-center! rounded-lg! border! bg-transparent! border-gray-200! text-gray-700 hover:border-gray-200 hover:bg-gray-50! focus:shadow-none active:border-gray-200! active:bg-transparent! active:shadow-none! dark:border-gray-800! dark:text-gray-400 dark:hover:border-gray-800 dark:hover:bg-gray-900! dark:active:border-gray-800!',
         },
-        addEventButton: {
-          text: 'Add Event +',
-          click: () => this.handleOpenAddModal(),
-          className:
-            'rounded-lg! border-0! bg-brand-500! px-3! sm:px-4! py-2! sm:py-2.5! text-xs! sm:text-sm! font-medium! text-white hover:bg-brand-600! focus:shadow-none! w-auto!',
-        },
       },
 
       // View configurations
@@ -192,9 +162,6 @@ export class CalenderComponent implements OnInit {
           dayCellClass: (data: any) => {
             if (data.inPopover) return 'bg-transparent! p-3!';
             let cls = 'relative! p-0.5 sm:p-1!';
-            if (data.isToday)
-              cls +=
-                ' isolate rounded-sm! bg-gray-100! dark:bg-gray-800/40! font-semibold text-brand-500 dark:text-brand-400';
             if (data.isOther) cls += ' bg-transparent!';
             return cls;
           },
@@ -203,7 +170,7 @@ export class CalenderComponent implements OnInit {
               ? 'flex custom-scrollbar max-h-60 flex-col gap-1.5 overflow-y-auto'
               : 'h-0 max-h-0 overflow-hidden invisible',
           dayCellTopInnerClass: 'text-xs! sm:text-sm!',
-          dayMaxEvents: 0,
+          dayMaxEvents: false,
           moreLinkClass:
             'border-0! bg-transparent! p-0! hover:bg-transparent! focus:outline-none',
           rowMoreLinkClass:
@@ -216,7 +183,7 @@ export class CalenderComponent implements OnInit {
           },
         },
         dayGridMonth: {
-          dayMaxEvents: this.isMobile ? 0 : 2,
+          dayMaxEvents: false,
           dayHeaderAlign: (data: any) => (data.inPopover ? 'start' : 'center'),
           dayHeaderClass: (data: any) =>
             data.inPopover
@@ -228,16 +195,14 @@ export class CalenderComponent implements OnInit {
               : 'px-1! py-2! sm:px-3! sm:py-3! md:px-5! md:py-4! text-xs! sm:text-sm! font-medium! text-gray-400 uppercase',
           dayCellClass: (data: any) => {
             if (data.inPopover) return 'bg-transparent! p-3!';
-            return `bg-transparent! p-1! sm:p-2! ${
-              data.isToday ? 'bg-gray-100! dark:bg-gray-800/40!' : ''
-            }`;
+            return 'bg-transparent! p-1! sm:p-2!';
           },
           dayCellInnerClass: (data: any) => {
             if (data.inPopover)
               return 'flex custom-scrollbar max-h-60 flex-col gap-1.5 overflow-y-auto';
             if (this.isMobile)
               return 'h-0 max-h-0 overflow-hidden invisible';
-            return data.isToday ? 'rounded-sm!' : '';
+            return '';
           },
           rowMoreLinkClass: this.isMobile
             ? 'absolute! -top-1! -start-0.5! z-10! border-0! bg-transparent! p-0!'
@@ -260,7 +225,7 @@ export class CalenderComponent implements OnInit {
           slotDuration: '01:00:00',
           slotMinHeight: 56,
           allDaySlot: true,
-          dayMaxEvents: this.isMobile ? 0 : undefined,
+          dayMaxEvents: false,
           moreLinkClass:
             'border-0! bg-transparent! p-0! hover:bg-transparent! focus:outline-none',
           rowMoreLinkClass: this.isMobile
@@ -284,26 +249,16 @@ export class CalenderComponent implements OnInit {
             return `${weekday} - ${day}`;
           },
           dayHeaderClass: (data: any) =>
-            `border-0! bg-gray-50! dark:bg-gray-900! ${
-              data.isToday ? 'bg-gray-100/70! dark:bg-gray-800/60!' : ''
-            }`,
+            'border-0! bg-gray-50! dark:bg-gray-900!',
           dayHeaderInnerClass: (data: any) =>
-            `px-1.5! sm:px-3! py-2.5! sm:py-3.5! text-center! text-[11px]! sm:text-xs! font-medium! text-gray-500! uppercase! dark:text-gray-400! ${
-              data.isToday
-                ? 'font-semibold! text-brand-500! dark:text-brand-400!'
-                : ''
-            }`,
+            'px-1.5! sm:px-3! py-2.5! sm:py-3.5! text-center! text-[11px]! sm:text-xs! font-medium! text-gray-500! uppercase! dark:text-gray-400!',
           slotHeaderDividerClass:
             'border-e! border-s-0! border-y-0! border-gray-200! dark:border-gray-800!',
           slotHeaderClass:
             'px-1.5! sm:px-3! py-1.5! sm:py-2! text-start! text-[11px]! sm:text-xs! font-medium! text-gray-400! dark:text-gray-500!',
           slotLaneClass: 'border-gray-100! dark:border-gray-800/60!',
           dayLaneClass: (data: any) =>
-            `border-gray-200! dark:border-gray-800! ${
-              data.isToday
-                ? 'bg-brand-50/15! dark:bg-brand-500/[0.03]!'
-                : ''
-            }`,
+            'border-gray-200! dark:border-gray-800!',
           allDayDividerClass:
             'border-b! border-t-0! border-x-0! border-gray-200! p-0! bg-transparent! dark:border-gray-800!',
           allDayHeaderClass:
@@ -313,7 +268,7 @@ export class CalenderComponent implements OnInit {
           slotDuration: '00:30:00',
           slotMinHeight: 48,
           allDaySlot: true,
-          dayMaxEvents: this.isMobile ? 0 : undefined,
+          dayMaxEvents: false,
           moreLinkClass:
             'border-0! bg-transparent! p-0! hover:bg-transparent! focus:outline-none',
           rowMoreLinkClass: this.isMobile
@@ -337,26 +292,16 @@ export class CalenderComponent implements OnInit {
             return `${weekday} - ${day}`;
           },
           dayHeaderClass: (data: any) =>
-            `border-0! bg-gray-50! dark:bg-gray-900! ${
-              data.isToday ? 'bg-gray-100/70! dark:bg-gray-800/60!' : ''
-            }`,
+            'border-0! bg-gray-50! dark:bg-gray-900!',
           dayHeaderInnerClass: (data: any) =>
-            `px-2! sm:px-4! py-2.5! sm:py-3.5! text-center! text-xs! font-medium! text-gray-500! uppercase! dark:text-gray-400! ${
-              data.isToday
-                ? 'font-semibold! text-brand-500! dark:text-brand-400!'
-                : ''
-            }`,
+            'px-2! sm:px-4! py-2.5! sm:py-3.5! text-center! text-xs! font-medium! text-gray-500! uppercase! dark:text-gray-400!',
           slotHeaderDividerClass:
             'border-e! border-s-0! border-y-0! border-gray-200! dark:border-gray-800!',
           slotHeaderClass:
             'px-2! sm:px-3! py-1.5! sm:py-2! text-start! text-[11px]! sm:text-xs! font-medium! text-gray-400! dark:text-gray-500!',
           slotLaneClass: 'border-gray-100! dark:border-gray-800/60!',
           dayLaneClass: (data: any) =>
-            `border-gray-200! dark:border-gray-800! ${
-              data.isToday
-                ? 'bg-brand-50/15! dark:bg-brand-500/[0.03]!'
-                : ''
-            }`,
+            'border-gray-200! dark:border-gray-800!',
           allDayDividerClass:
             'border-b! border-t-0! border-x-0! border-gray-200! p-0! bg-transparent! dark:border-gray-800!',
           allDayHeaderClass:
@@ -395,10 +340,10 @@ export class CalenderComponent implements OnInit {
         html: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-4"><path d="M18 6L6 18M6 6l12 12" /></svg>`,
       },
 
-      selectable: true,
+      selectable: false,
+      eventDisplay: 'block',
       events: this.events,
-      select: (info) => this.handleDateSelect(info),
-      eventClick: (info) => this.handleEventClick(info),
+      eventClick: (info) => this.handleCalendarEventClick(info),
       eventContent: (arg) => this.renderEventContent(arg),
       datesSet: (arg: any) => {
         this.currentView = arg.view.type;
@@ -517,173 +462,216 @@ export class CalenderComponent implements OnInit {
     }
   }
 
-  handleOpenAddModal() {
-    this.resetModalFields();
-    const currentDate = new Date();
-    const yyyy = currentDate.getFullYear();
-    const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
-    const dd = String(currentDate.getDate()).padStart(2, '0');
-    const combineDate = `${yyyy}-${mm}-${dd}`;
-
-    this.eventStartDate = combineDate;
-    this.eventEndDate = combineDate;
-    this.eventLevel = 'Primary';
-    this.openModal();
+  private loadApplicationEvents(): void {
+    this.applicationData.loadSnapshot().subscribe({
+      next: (snapshot) => {
+        this.events = this.buildEvents(snapshot);
+        this.calendarOptions = { ...this.calendarOptions, events: this.events };
+        this.isLoading = false;
+        this.changeDetector.detectChanges();
+      },
+      error: (error: unknown) => {
+        this.errorMessage = error instanceof Error ? error.message : 'Unable to load calendar data.';
+        this.isLoading = false;
+        this.changeDetector.detectChanges();
+      },
+    });
   }
 
-  handleDateSelect(selectInfo: DateSelectInfo) {
-    this.resetModalFields();
-    this.eventStartDate = selectInfo.startStr ? selectInfo.startStr.split('T')[0] : '';
-    this.eventEndDate = selectInfo.endStr
-      ? selectInfo.endStr.split('T')[0]
-      : this.eventStartDate;
-    this.eventLevel = 'Primary';
-    this.openModal();
-  }
+  private buildEvents(snapshot: ApplicationDataSnapshot): CalendarEvent[] {
+    const accountsById = new Map(snapshot.accounts.map((account) => [account.id, account]));
+    const events: CalendarEvent[] = [];
 
-  handleEventClick(clickInfo: EventClickInfo) {
-    const event = clickInfo.event as any;
-    if (event.url) {
-      window.open(event.url);
-      clickInfo.jsEvent.preventDefault();
-      return;
-    }
-
-    this.selectedEvent = {
-      id: event.id,
-      title: event.title,
-      start: event.startStr,
-      end: event.endStr,
-      extendedProps: { calendar: event.extendedProps?.calendar || 'Primary' }
-    };
-    this.eventTitle = event.title;
-    this.eventStartDate = event.startStr ? event.startStr.split('T')[0] : '';
-    this.eventEndDate = event.endStr ? event.endStr.split('T')[0] : this.eventStartDate;
-    this.eventLevel = event.extendedProps?.calendar || 'Primary';
-    this.openModal();
-  }
-
-  handleAddOrUpdateEvent() {
-    const titleVal = this.eventTitle.trim() || (this.selectedEvent ? 'Event' : 'New Event');
-    if (this.selectedEvent) {
-      this.events = this.events.map(ev =>
-        ev.id === this.selectedEvent!.id
-          ? {
-              ...ev,
-              title: titleVal,
-              start: this.eventStartDate,
-              end: this.eventEndDate || this.eventStartDate,
-              extendedProps: { calendar: this.eventLevel || 'Primary' }
-            }
-          : ev
+    for (const user of snapshot.users) {
+      const event = this.createCalendarEvent(
+        `user-created-${user.id}`,
+        `User Created: ${user.name}`,
+        user.createdAt,
+        'Primary',
+        'user',
+        [
+          { label: 'User', value: user.name },
+          { label: 'Account type', value: 'User' },
+          { label: 'Unique ID', value: user.uniqueId },
+          { label: 'Mobile', value: user.mobile },
+          ...(user.agentName ? [{ label: 'Agent', value: user.agentName }] : []),
+        ],
       );
-    } else {
-      const newEvent: CalendarEvent = {
-        id: Date.now().toString(),
-        title: titleVal,
-        start: this.eventStartDate,
-        end: this.eventEndDate || this.eventStartDate,
-        allDay: true,
-        extendedProps: { calendar: this.eventLevel || 'Primary' }
-      };
-      this.events = [...this.events, newEvent];
+      if (event) events.push(event);
     }
 
-    const api = this.calendarComponent?.getApi();
-    if (api) {
-      api.removeAllEvents();
-      this.events.forEach(ev => api.addEvent(ev));
+    for (const agent of snapshot.agents) {
+      const event = this.createCalendarEvent(
+        `agent-created-${agent.id}`,
+        `Agent Created: ${agent.name}`,
+        agent.createdAt,
+        'Primary',
+        'agent',
+        [
+          { label: 'Agent', value: agent.name },
+          { label: 'Unique ID', value: agent.uniqueId },
+          { label: 'Mobile', value: agent.mobile },
+        ],
+      );
+      if (event) events.push(event);
     }
 
-    this.closeModal();
-    this.resetModalFields();
-  }
+    for (const request of snapshot.requests) {
+      const account = accountsById.get(request.userId);
+      const accountLabel = account?.type === 'agent' ? 'Agent' : 'User';
+      const details = [
+        { label: accountLabel, value: account?.name ?? `Account ${request.userId}` },
+        ...(account?.agentName ? [{ label: 'Agent', value: account.agentName }] : []),
+        { label: 'Status', value: this.toTitleCase(request.status) },
+        { label: 'Request type', value: request.type === 'ADD_POINTS' ? 'Add points' : 'Withdrawal' },
+        { label: 'Points', value: request.amount },
+        { label: 'Request ID', value: `#${request.id}` },
+      ];
+      const requestColor = request.status === 'PENDING' ? 'Warning' : request.status === 'ACCEPTED' ? 'Success' : 'Danger';
+      const createdEvent = this.createCalendarEvent(
+        `wallet-request-created-${request.id}`,
+        `Wallet Request ${this.toTitleCase(request.status)}: ${account?.name ?? `Account ${request.userId}`}`,
+        request.createdAt,
+        requestColor,
+        'wallet-request',
+        details,
+      );
+      if (createdEvent) events.push(createdEvent);
 
-  resetModalFields() {
-    this.eventTitle = '';
-    this.eventStartDate = '';
-    this.eventEndDate = '';
-    this.eventLevel = 'Primary';
-    this.selectedEvent = null;
-  }
-
-  openModal() {
-    this.isOpen = true;
-  }
-
-  closeModal() {
-    this.isOpen = false;
-    this.resetModalFields();
-  }
-
-  renderEventContent(eventInfo: any) {
-    const calendarLevel = (
-      eventInfo.event.extendedProps?.calendar || 'primary'
-    ).toLowerCase();
-
-    const colorMap: Record<string, { bg: string; dot: string; title: string; time: string }> = {
-      success: {
-        bg: 'border border-success-100 bg-success-50 dark:border-success-500/20 dark:bg-success-500/15',
-        dot: 'bg-success-500',
-        title: 'text-success-700 dark:text-success-400',
-        time: 'text-success-600/80 dark:text-success-400/80',
-      },
-      danger: {
-        bg: 'border border-error-100 bg-error-50 dark:border-error-500/20 dark:bg-error-500/15',
-        dot: 'bg-error-500',
-        title: 'text-error-700 dark:text-error-400',
-        time: 'text-error-600/80 dark:text-error-400/80',
-      },
-      primary: {
-        bg: 'border border-brand-100 bg-brand-50 dark:border-brand-500/20 dark:bg-brand-500/15',
-        dot: 'bg-brand-500',
-        title: 'text-brand-700 dark:text-brand-400',
-        time: 'text-brand-600/80 dark:text-brand-400/80',
-      },
-      warning: {
-        bg: 'border border-orange-100 bg-orange-50 dark:border-orange-500/20 dark:bg-orange-500/15',
-        dot: 'bg-orange-500',
-        title: 'text-orange-700 dark:text-orange-400',
-        time: 'text-orange-600/80 dark:text-orange-400/80',
-      },
-    };
-
-    const colors = colorMap[calendarLevel] || colorMap['primary'];
-    const isTimeGridView =
-      !eventInfo.event?.allDay &&
-      eventInfo.view?.type &&
-      eventInfo.view.type.startsWith('timeGrid');
-
-    if (isTimeGridView) {
-      return {
-        html: `
-          <div dir="ltr" class="event-fc-color flex h-full w-full flex-col justify-start overflow-hidden rounded-md p-1 transition-colors sm:rounded-lg sm:p-1.5 ${colors.bg}">
-            <div class="flex items-center gap-1 sm:gap-1.5">
-              <div class="size-1.5 shrink-0 rounded-full sm:size-2 ${colors.dot}"></div>
-              <div class="truncate text-[11px] font-semibold leading-tight sm:text-xs ${colors.title}">${eventInfo.event.title || ''}</div>
-            </div>
-            ${
-              eventInfo.timeText
-                ? `<div class="mt-0.5 truncate ps-2.5 text-[10px] font-medium leading-tight sm:ps-3.5 sm:text-[11px] ${colors.time}">${eventInfo.timeText}</div>`
-                : ''
-            }
-          </div>
-        `,
-      };
+      const createdTimestamp = Date.parse(request.createdAt);
+      const updatedTimestamp = Date.parse(request.updatedAt);
+      if (request.status !== 'PENDING' && Number.isFinite(updatedTimestamp) && updatedTimestamp > createdTimestamp) {
+        const updatedEvent = this.createCalendarEvent(
+          `wallet-request-updated-${request.id}`,
+          `Wallet Request ${this.toTitleCase(request.status)}: ${account?.name ?? `Account ${request.userId}`}`,
+          request.updatedAt,
+          requestColor,
+          'wallet-request',
+          details,
+        );
+        if (updatedEvent) events.push(updatedEvent);
+      }
     }
 
+    for (const transaction of snapshot.transactions) {
+      const account = accountsById.get(transaction.userId);
+      const accountLabel = account?.type === 'agent' ? 'Agent' : 'User';
+      const event = this.createCalendarEvent(
+        `transaction-${transaction.id}`,
+        `Transaction ${this.toTitleCase(transaction.type)}: ${account?.name ?? `Account ${transaction.userId}`}`,
+        transaction.createdAt,
+        transaction.type === 'CREDIT' ? 'Success' : 'Danger',
+        'transaction',
+        [
+          { label: accountLabel, value: account?.name ?? `Account ${transaction.userId}` },
+          ...(account?.agentName ? [{ label: 'Agent', value: account.agentName }] : []),
+          { label: 'Transaction type', value: this.toTitleCase(transaction.type) },
+          { label: 'Source', value: this.formatSource(transaction.source) },
+          { label: 'Points', value: transaction.amount },
+          { label: 'Balance before', value: transaction.balanceBefore },
+          { label: 'Balance after', value: transaction.balanceAfter },
+          ...(transaction.requestId ? [{ label: 'Request ID', value: `#${transaction.requestId}` }] : []),
+          ...(transaction.description ? [{ label: 'Details', value: transaction.description }] : []),
+        ],
+      );
+      if (event) events.push(event);
+    }
+
+    return events.sort((left, right) => left.extendedProps.occurredAt.localeCompare(right.extendedProps.occurredAt));
+  }
+
+  private createCalendarEvent(
+    id: string,
+    title: string,
+    timestamp: string | undefined,
+    calendar: string,
+    source: CalendarEvent['extendedProps']['source'],
+    details: { label: string; value: string }[],
+  ): CalendarEvent | null {
+    if (!timestamp || !Number.isFinite(Date.parse(timestamp))) return null;
+    const hasTime = /T\d{2}:\d{2}/.test(timestamp);
+    const start = hasTime ? new Date(timestamp).toISOString() : timestamp.slice(0, 10);
     return {
-      html: `
-        <div dir="ltr" class="event-fc-color flex items-center rounded-md py-1 ps-1.5 pe-2 transition-colors sm:rounded-lg sm:py-1.5 sm:ps-2.5 sm:pe-3 ${colors.bg}">
-          <div class="fc-daygrid-event-dot ms-0 me-1 h-2.5 w-1 shrink-0 rounded-full border-none sm:me-2 sm:h-3.5 ${colors.dot}"></div>
-          ${
-            eventInfo.timeText
-              ? `<div class="fc-event-time me-1 p-0 text-[10px] font-normal text-gray-500 sm:me-1.5 sm:text-xs dark:text-gray-400">${eventInfo.timeText}</div>`
-              : ''
-          }
-          <div class="fc-event-title truncate p-0 text-[11px] font-medium text-gray-700 sm:text-xs dark:text-white">${eventInfo.event.title || ''}</div>
-        </div>
-      `,
+      id,
+      title,
+      start,
+      allDay: !hasTime,
+      extendedProps: {
+        calendar,
+        source,
+        dateKey: this.toCalendarDate(timestamp),
+        occurredAt: timestamp,
+        hasTime,
+        details,
+      },
     };
+  }
+
+  private toCalendarDate(value: string): string {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    const date = new Date(value);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private toTitleCase(value: string): string {
+    return value.toLowerCase().split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+  }
+
+  private formatSource(value: string): string {
+    return value.toLowerCase().split('_').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+  }
+
+  private handleCalendarEventClick(info: any): void {
+    info.jsEvent?.preventDefault();
+
+    const eventId = String(info.event.id);
+    const event = this.events.find((item) => String(item.id) === eventId);
+    if (!event) return;
+    this.selectedEvent = event;
+    this.isEventDetailsOpen = true;
+    this.changeDetector.detectChanges();
+  }
+
+  closeDateEvents(): void {
+    this.isEventDetailsOpen = false;
+    this.selectedEvent = null;
+    this.changeDetector.detectChanges();
+  }
+
+  get selectedDateValue(): Date | null {
+    const dateKey = this.selectedEvent?.extendedProps.dateKey;
+    if (!dateKey) return null;
+    const [year, month, day] = dateKey.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  renderEventContent(eventInfo: any) {
+    const title = this.escapeHtml(String(eventInfo.event.title || 'Calendar event'));
+    const source = String(eventInfo.event.extendedProps?.source || 'user');
+    const status = String(eventInfo.event.extendedProps?.calendar || 'Primary').toLowerCase();
+    const colorClass = source === 'agent'
+      ? 'calendar-event-purple'
+      : status === 'warning'
+        ? 'calendar-event-warning'
+        : status === 'success'
+          ? 'calendar-event-success'
+          : status === 'danger'
+            ? 'calendar-event-danger'
+            : 'calendar-event-primary';
+    return {
+      html: `<span class="calendar-event-bar ${colorClass}" title="${title}">${title}</span>`,
+    };
+  }
+
+  private escapeHtml(value: string): string {
+    return value.replace(/[&<>"']/g, (character) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[character] ?? character);
   }
 }

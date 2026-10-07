@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, of, Subscription, TimeoutError } from 'rxjs';
 import { AuthService } from '../../../shared/services/auth.service';
 import { ManagedUser, UserService } from '../../../shared/services/user.service';
@@ -13,7 +14,7 @@ type RequestAction = 'approve' | 'decline';
 @Component({
   selector: 'app-wallet-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './wallet-management.component.html',
 })
 export class WalletManagementComponent implements OnInit, OnDestroy {
@@ -38,6 +39,8 @@ export class WalletManagementComponent implements OnInit, OnDestroy {
     public userService: UserService,
     private readonly walletService: WalletService,
     private readonly changeDetector: ChangeDetectorRef,
+    private readonly router: Router,
+    private readonly route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
@@ -65,6 +68,16 @@ export class WalletManagementComponent implements OnInit, OnDestroy {
 
   get isUser(): boolean {
     return this.authService.role === 'user';
+  }
+
+  get isCreatePage(): boolean {
+    return this.router.url.startsWith('/wallet-transfer/create');
+  }
+
+  get returnPath(): string {
+    return this.route.snapshot.queryParamMap.get('returnTo') === 'manage'
+      ? '/wallet-transfer/manage'
+      : '/wallet-transfer';
   }
 
   get availableUsers(): ManagedUser[] {
@@ -118,6 +131,13 @@ export class WalletManagementComponent implements OnInit, OnDestroy {
         next: () => {
           const action = this.requestType === 'ADD_POINTS' ? 'add' : 'redeem';
           this.amount = '';
+          if (this.isCreatePage) {
+            void this.router.navigate([this.returnPath], {
+              state: { successMessage: 'The wallet transfer request was submitted successfully.' },
+            });
+            this.isSubmitting = false;
+            return;
+          }
           this.successMessage = `The request to ${action} ${recipient.name}'s points was submitted and is pending approval.`;
           this.loadRequests(recipient.id);
           this.isSubmitting = false;

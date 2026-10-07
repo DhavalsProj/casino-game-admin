@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { finalize } from 'rxjs';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { finalize, TimeoutError } from 'rxjs';
+import { AuthService } from '../../../shared/services/auth.service';
 import { UserService, ManagedUser, ManagedUserType } from '../../../shared/services/user.service';
+import { UserFeedbackService } from '../../../shared/services/user-feedback.service';
 
 @Component({
   selector: 'app-user-create',
@@ -14,15 +16,21 @@ import { UserService, ManagedUser, ManagedUserType } from '../../../shared/servi
 export class UserCreateComponent implements OnInit {
   agents: ManagedUser[] = [];
   isLoading = false;
+  isLoadingUser = false;
+  userLoadFailed = false;
+  isProfileEdit = false;
+  editUserId: number | null = null;
+  editingUser: ManagedUser | null = null;
   errorMessage = '';
-  createdCredentials: { name: string; uniqueId: string; password: string } | null = null;
-
   readonly userForm: FormGroup;
 
   constructor(
     private formBuilder: FormBuilder,
+    private readonly authService: AuthService,
     public userService: UserService,
+    private readonly userFeedbackService: UserFeedbackService,
     private router: Router,
+    private route: ActivatedRoute,
   ) {
     this.userForm = this.formBuilder.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
@@ -41,6 +49,36 @@ export class UserCreateComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.isProfileEdit = this.route.snapshot.routeConfig?.path === 'profile/edit';
+    if (this.isProfileEdit) {
+      const currentUser = this.authService.currentUser;
+      if (!currentUser) {
+        void this.router.navigate(['/signin']);
+        return;
+      }
+      this.editUserId = currentUser.id;
+      this.userForm.get('agentId')?.clearValidators();
+      this.userForm.get('agentId')?.updateValueAndValidity({ emitEvent: false });
+      this.isLoadingUser = true;
+      this.userService.getUserById(currentUser.id).subscribe({
+        next: (user) => {
+          this.editingUser = user;
+          this.patchUserForm(user);
+          this.isLoadingUser = false;
+        },
+        error: (error: unknown) => {
+          this.errorMessage = error instanceof TimeoutError
+            ? 'Loading your profile took longer than 15 seconds. Check the user service and try again.'
+            : error instanceof Error
+              ? error.message
+              : 'Unable to load your profile.';
+          this.isLoadingUser = false;
+          this.userLoadFailed = true;
+        },
+      });
+      return;
+    }
+
     if (!this.userService.canCreate) {
       this.router.navigate(['/users']);
       return;
@@ -49,6 +87,42 @@ export class UserCreateComponent implements OnInit {
       this.userForm.patchValue({ type: 'user' });
       this.userForm.get('type')?.disable();
       this.userForm.get('agentId')?.disable();
+      return;
+    }
+    const routeId = this.route.snapshot.paramMap.get('id');
+    if (routeId !== null) {
+      const id = Number(routeId);
+      if (!Number.isSafeInteger(id) || id <= 0 || !this.userService.canManage) {
+        this.router.navigate(['/users']);
+        return;
+      }
+      this.editUserId = id;
+      this.userForm.get('type')?.disable({ emitEvent: false });
+      this.userForm.get('agentId')?.disable({ emitEvent: false });
+      this.userService.getAgents().subscribe({ next: (agents) => this.agents = agents });
+      const navigationState = this.router.getCurrentNavigation()?.extras.state ?? window.history.state;
+      const previewUser = navigationState['previewUser'] as ManagedUser | undefined;
+      if (previewUser?.id === id) {
+        this.editingUser = previewUser;
+        this.patchUserForm(previewUser);
+      }
+      this.isLoadingUser = true;
+      this.userService.getUserById(id).subscribe({
+        next: (user) => {
+          this.editingUser = user;
+          this.patchUserForm(user);
+          this.isLoadingUser = false;
+        },
+        error: (error: unknown) => {
+          this.errorMessage = error instanceof TimeoutError
+            ? 'Loading this user took longer than 15 seconds. Check the user service and try again.'
+            : error instanceof Error
+              ? error.message
+              : 'Unable to load this user.';
+          this.isLoadingUser = false;
+          this.userLoadFailed = true;
+        },
+      });
       return;
     }
     this.userService.getAgents().subscribe((agents) => this.agents = agents);
@@ -60,13 +134,30 @@ export class UserCreateComponent implements OnInit {
   }
 
   submit(): void {
-    if (this.userForm.invalid) {
+    if (this.isLoadingUser || this.userForm.invalid) {
       this.userForm.markAllAsTouched();
       return;
     }
     this.isLoading = true;
     this.errorMessage = '';
     const rawValue = this.userForm.getRawValue();
+    if (this.editUserId !== null) {
+      this.userService.updateUser(this.editUserId, {
+        name: rawValue.name ?? '',
+        mobile: rawValue.mobile ?? '',
+      }).pipe(finalize(() => this.isLoading = false)).subscribe({
+        next: (updatedUser) => {
+          if (this.isProfileEdit) {
+            this.authService.updateCurrentUserProfile(updatedUser);
+            void this.router.navigate(['/profile']);
+            return;
+          }
+          void this.router.navigate(['/users'], { state: { successMessage: 'User updated successfully.' } });
+        },
+        error: (error: Error) => this.errorMessage = error.message || 'Unable to update this user.',
+      });
+      return;
+    }
     this.userService.createUser({
       name: rawValue.name ?? '',
       mobile: rawValue.mobile ?? '',
@@ -76,11 +167,8 @@ export class UserCreateComponent implements OnInit {
       finalize(() => this.isLoading = false),
     ).subscribe({
       next: (result) => {
-        this.createdCredentials = {
-          name: result.user.name,
-          uniqueId: result.user.uniqueId,
-          password: result.password,
-        };
+        this.userFeedbackService.setCreationFeedback({ user: result.user, password: result.password });
+        void this.router.navigate(['/users']);
       },
       error: (error: Error) => {
         this.errorMessage = error.name === 'TimeoutError'
@@ -88,11 +176,6 @@ export class UserCreateComponent implements OnInit {
           : error.message;
       },
     });
-  }
-
-  closeSuccess(): void {
-    this.createdCredentials = null;
-    this.router.navigate(['/users']);
   }
 
   private updateAgentRequirement(): void {
@@ -104,5 +187,14 @@ export class UserCreateComponent implements OnInit {
       agentControl?.setValue('');
     }
     agentControl?.updateValueAndValidity();
+  }
+
+  private patchUserForm(user: ManagedUser): void {
+    this.userForm.patchValue({
+      name: user.name,
+      mobile: user.mobile,
+      type: user.type,
+      agentId: user.agentId ?? '',
+    });
   }
 }

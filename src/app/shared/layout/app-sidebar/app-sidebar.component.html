@@ -21,24 +21,12 @@
       'justify-start': (isExpanded$ | async) || (isHovered$ | async)
     }"
   >
-    <a routerLink="/">
+    <a routerLink="/" class="inline-flex items-center gap-2.5">
       @if ((isExpanded$ | async) || (isHovered$ | async) || (isMobileOpen$ | async)) {
-      <img
-        class="dark:hidden"
-        src="/images/logo/logo.svg"
-        alt="Logo"
-        width="150"
-        height="40"
-      />
-      <img
-        class="hidden dark:block"
-        src="/images/logo/logo-dark.svg"
-        alt="Logo"
-        width="150"
-        height="40"
-      />
+      <img src="/images/logo/logo-icon.svg" alt="CasinoAdmin" width="32" height="32" />
+      <span class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">CasinoAdmin</span>
       } @else {
-      <img src="/images/logo/logo-icon.svg" alt="Logo" width="32" height="32" />
+      <img src="/images/logo/logo-icon.svg" alt="CasinoAdmin" width="32" height="32" />
       }
     </a>
   </div>

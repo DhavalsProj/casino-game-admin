@@ -1,0 +1,106 @@
+<div class="space-y-6">
+  <header class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <div>
+      <p class="text-theme-sm text-gray-500 dark:text-gray-400">Wallet</p>
+      <h1 class="mt-1 text-title-sm font-semibold text-gray-800 dark:text-white/90">Wallet Transfer</h1>
+      <p class="mt-2 text-theme-sm text-gray-500 dark:text-gray-400">Review wallet transfer requests across the accounts available to your login.</p>
+    </div>
+    @if (isManagementPage) {
+      <a routerLink="/wallet-transfer/create" [queryParams]="{ returnTo: 'manage' }" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white hover:bg-brand-600">+ Create New</a>
+    } @else {
+      <button type="button" (click)="loadRequests()" [disabled]="isLoading" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 text-theme-sm font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">{{ isLoading ? 'Refreshing...' : 'Refresh' }}</button>
+    }
+  </header>
+
+  @if (successMessage) {
+    <div class="flex items-center justify-between rounded-lg border border-success-200 bg-success-25 px-4 py-3 text-theme-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400" role="status">
+      <span>{{ successMessage }}</span>
+      <button type="button" class="font-medium underline" (click)="successMessage = ''">Dismiss</button>
+    </div>
+  }
+  @if (errorMessage) {
+    <div class="rounded-lg border border-error-200 bg-error-25 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400" role="alert">{{ errorMessage }}</div>
+  }
+
+  <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="flex flex-col justify-between gap-3 border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:flex-row sm:items-center sm:px-5">
+      <div>
+        <h2 class="font-semibold text-gray-800 dark:text-white/90">Transfer requests</h2>
+        <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">{{ filteredRequests.length }} request{{ filteredRequests.length === 1 ? '' : 's' }} visible</p>
+      </div>
+      <input [(ngModel)]="search" (ngModelChange)="onSearchChange()" type="search" placeholder="Search transfers" aria-label="Search wallet transfers" class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-700 outline-none placeholder:text-gray-400 focus:border-brand-500 dark:border-gray-700 dark:text-gray-300 sm:w-64" />
+    </div>
+
+    @if (isLoading) {
+      <div class="px-5 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">Loading transfer requests...</div>
+    } @else if (filteredRequests.length === 0) {
+      <div class="px-5 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">No wallet transfer requests found.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="min-w-[940px] w-full text-start text-theme-sm">
+          <thead class="bg-gray-50 dark:bg-white/[0.02]">
+            <tr class="text-gray-500 dark:text-gray-400">
+              <th class="px-5 py-3 font-medium">Account</th>
+              <th class="px-5 py-3 font-medium">Unique ID</th>
+              <th class="px-5 py-3 font-medium">Type</th>
+              <th class="px-5 py-3 font-medium">Points</th>
+              <th class="px-5 py-3 font-medium">Status</th>
+              <th class="px-5 py-3 font-medium">Submitted</th>
+              @if (isManagementPage) { <th class="px-5 py-3 font-medium">Actions</th> }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            @for (request of pagedRequests; track request.id) {
+              <tr class="text-gray-700 dark:text-gray-300">
+                <td class="whitespace-nowrap px-5 py-4 font-medium text-gray-800 dark:text-white/90">{{ request.accountName }}</td>
+                <td class="whitespace-nowrap px-5 py-4">{{ request.accountUniqueId }}</td>
+                <td class="whitespace-nowrap px-5 py-4">{{ request.type === 'ADD_POINTS' ? 'Add points' : 'Withdrawal' }}</td>
+                <td class="whitespace-nowrap px-5 py-4 font-medium">{{ request.amount }}</td>
+                <td class="whitespace-nowrap px-5 py-4">
+                  <span class="rounded-full px-2.5 py-1 text-theme-xs font-medium" [ngClass]="request.status === 'PENDING' ? 'bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-400' : request.status === 'ACCEPTED' ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400' : 'bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-400'">{{ request.status | titlecase }}</span>
+                </td>
+                <td class="whitespace-nowrap px-5 py-4">{{ request.createdAt | date: 'dd MMM yyyy, h:mm a' }}</td>
+                @if (isManagementPage) {
+                  <td class="whitespace-nowrap px-5 py-4">
+                    <button type="button" (click)="viewRequest(request)" class="rounded-lg border border-gray-300 px-3 py-1.5 text-theme-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">View</button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (filteredRequests.length > pageSize) {
+        <div class="flex flex-col items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 text-theme-xs text-gray-500 dark:border-gray-800 dark:text-gray-400 sm:flex-row sm:px-5">
+          <span>Page {{ currentPage }} of {{ pageCount }}</span>
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="previousPage()" [disabled]="currentPage === 1" class="rounded-lg border border-gray-300 px-3 py-2 font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-white/5">Previous</button>
+            <button type="button" (click)="nextPage()" [disabled]="currentPage === pageCount" class="rounded-lg border border-gray-300 px-3 py-2 font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-white/5">Next</button>
+          </div>
+        </div>
+      }
+    }
+  </section>
+</div>
+
+@if (selectedRequest; as request) {
+  <div class="fixed inset-0 z-99999 flex items-center justify-center bg-gray-950/40 px-4" (click)="selectedRequest = null">
+    <section role="dialog" aria-modal="true" aria-labelledby="wallet-request-title" class="w-full max-w-lg rounded-2xl bg-white p-5 shadow-theme-xl dark:bg-gray-900" (click)="$event.stopPropagation()">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-theme-xs font-semibold uppercase tracking-wide text-gray-500">Transfer request #{{ request.id }}</p>
+          <h2 id="wallet-request-title" class="mt-1 text-theme-xl font-semibold text-gray-800 dark:text-white/90">{{ request.accountName }}</h2>
+        </div>
+        <button type="button" aria-label="Close transfer details" (click)="selectedRequest = null" class="text-2xl text-gray-400 hover:text-gray-700 dark:hover:text-white">×</button>
+      </div>
+      <dl class="mt-5 grid gap-4 sm:grid-cols-2">
+        <div><dt class="text-theme-xs text-gray-500">Unique ID</dt><dd class="mt-1 text-theme-sm text-gray-800 dark:text-gray-200">{{ request.accountUniqueId }}</dd></div>
+        <div><dt class="text-theme-xs text-gray-500">Request type</dt><dd class="mt-1 text-theme-sm text-gray-800 dark:text-gray-200">{{ request.type === 'ADD_POINTS' ? 'Add points' : 'Withdrawal' }}</dd></div>
+        <div><dt class="text-theme-xs text-gray-500">Points</dt><dd class="mt-1 text-theme-sm text-gray-800 dark:text-gray-200">{{ request.amount }}</dd></div>
+        <div><dt class="text-theme-xs text-gray-500">Status</dt><dd class="mt-1 text-theme-sm text-gray-800 dark:text-gray-200">{{ request.status | titlecase }}</dd></div>
+        <div><dt class="text-theme-xs text-gray-500">Submitted</dt><dd class="mt-1 text-theme-sm text-gray-800 dark:text-gray-200">{{ request.createdAt | date: 'dd MMM yyyy, h:mm a' }}</dd></div>
+      </dl>
+    </section>
+  </div>
+}
+

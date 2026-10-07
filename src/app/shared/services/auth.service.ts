@@ -77,6 +77,12 @@ export class AuthService {
     void this.router.navigate(['/signin']);
   }
 
+  updateCurrentUserProfile(profile: Pick<AuthenticatedUser, 'id' | 'name' | 'mobile'>): void {
+    const currentUser = this.currentUser;
+    if (!currentUser || currentUser.id !== profile.id) return;
+    this.storeSession({ ...currentUser, name: profile.name, mobile: profile.mobile });
+  }
+
   private extractLoginError(error: HttpErrorResponse): string {
     if (error?.error && typeof error.error === 'object' && 'message' in error.error) {
       const message = error.error.message;

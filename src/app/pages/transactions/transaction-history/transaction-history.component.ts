@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { forkJoin, of, Subscription, TimeoutError } from 'rxjs';
 import { AuthService } from '../../../shared/services/auth.service';
 import { ManagedUser, UserService } from '../../../shared/services/user.service';
@@ -22,6 +23,8 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
   targetType: TransactionTargetType = 'user';
   selectedAgentId = '';
   selectedTargetId = '';
+  transactionType: 'all' | 'CREDIT' | 'DEBIT' = 'all';
+  search = '';
   isLoadingTargets = false;
   isLoadingTransactions = false;
   errorMessage = '';
@@ -32,6 +35,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     public userService: UserService,
     private readonly walletService: WalletService,
     private readonly changeDetector: ChangeDetectorRef,
+    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -61,6 +65,33 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     return this.authService.role === 'user';
   }
 
+  get isManagementPage(): boolean {
+    return this.router.url.split('?')[0] === '/transactions/manage';
+  }
+
+  get filteredTransactions(): WalletTransaction[] {
+    if (!this.isManagementPage) {
+      return this.transactions;
+    }
+    const query = this.search.trim().toLowerCase();
+    return this.transactions.filter((transaction) => {
+      const matchesType = this.transactionType === 'all' || transaction.type === this.transactionType;
+      const matchesSearch = !query || [
+        String(transaction.id),
+        String(transaction.userId),
+        this.targetName,
+        transaction.type,
+        transaction.source,
+        transaction.amount,
+        transaction.balanceBefore,
+        transaction.balanceAfter,
+        transaction.description ?? '',
+        String(transaction.requestId ?? ''),
+      ].some((value) => value.toLowerCase().includes(query));
+      return matchesType && matchesSearch;
+    });
+  }
+
   get availableUsers(): ManagedUser[] {
     if (this.isAdmin && this.selectedAgentId) {
       return this.users.filter((user) => user.agentId === this.selectedAgentId);
@@ -87,18 +118,20 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     this.selectedAgentId = '';
     this.selectedTargetId = '';
     this.transactions = [];
+    this.errorMessage = '';
   }
 
   onAgentChange(): void {
     this.selectedTargetId = '';
     this.transactions = [];
+    this.errorMessage = '';
   }
 
   onTargetChange(): void {
+    this.transactions = [];
+    this.errorMessage = '';
     if (this.selectedTarget) {
       this.loadTransactions(this.selectedTarget.id);
-    } else {
-      this.transactions = [];
     }
   }
 

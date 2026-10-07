@@ -1,0 +1,17 @@
+{
+  "/auth": {
+    "target": "http://127.0.0.1:3001",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/users": {
+    "target": "http://127.0.0.1:3001",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/wallet": {
+    "target": "http://127.0.0.1:3001",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
