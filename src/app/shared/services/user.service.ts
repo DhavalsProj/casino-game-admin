@@ -74,12 +74,14 @@ export class UserService {
       params = params.set('type', type);
     }
     return this.http.get<ApiUser[]>(`${this.apiUrl}/users`, { params }).pipe(
+      timeout({ first: 15000 }),
       map((users) => users.map((user) => this.toManagedUser(user))),
     );
   }
 
   getAgents(): Observable<ManagedUser[]> {
     return this.http.get<ApiUser[]>(`${this.apiUrl}/users/agents`).pipe(
+      timeout({ first: 15000 }),
       map((users) => users.map((user) => this.toManagedUser(user))),
     );
   }

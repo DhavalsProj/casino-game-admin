@@ -1,0 +1,152 @@
+<div class="space-y-6">
+  <header>
+    <p class="text-theme-sm text-gray-500 dark:text-gray-400">Wallet</p>
+    <h1 class="mt-1 text-title-sm font-semibold text-gray-800 dark:text-white/90">Wallet insert and redeem</h1>
+    <p class="mt-2 text-theme-sm text-gray-500 dark:text-gray-400">
+      @if (isUser) {
+        Review incoming point requests for your account.
+      } @else {
+        Submit point requests and review their status.
+      }
+    </p>
+  </header>
+
+  @if (successMessage) {
+    <div class="rounded-lg border border-success-200 bg-success-25 px-4 py-3 text-theme-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400" role="status">
+      {{ successMessage }}
+    </div>
+  }
+  @if (errorMessage) {
+    <div class="rounded-lg border border-error-200 bg-error-25 px-4 py-3 text-theme-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400" role="alert">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (!isUser) {
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+      <h2 class="font-semibold text-gray-800 dark:text-white/90">Create wallet request</h2>
+      <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">Choose an account and request to add or redeem points. The request remains pending until approved.</p>
+
+      @if (isLoadingTargets) {
+        <p class="mt-5 text-theme-sm text-gray-500 dark:text-gray-400">Loading accounts...</p>
+      } @else {
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          @if (isAdmin) {
+            <label class="text-theme-sm text-gray-700 dark:text-gray-300">
+              Account type
+              <select [(ngModel)]="targetType" (ngModelChange)="onTargetTypeChange()" class="mt-1.5 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:text-gray-200">
+                <option value="user">User</option>
+                <option value="agent">Agent</option>
+              </select>
+            </label>
+          }
+
+          @if (isAdmin && targetType === 'user') {
+            <label class="text-theme-sm text-gray-700 dark:text-gray-300">
+              Agent
+              <select [(ngModel)]="selectedAgentId" (ngModelChange)="onAgentChange()" class="mt-1.5 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:text-gray-200">
+                <option value="">All agents</option>
+                @for (agent of agents; track agent.id) {
+                  <option [value]="agent.uniqueId">{{ agent.name }} ({{ agent.uniqueId }})</option>
+                }
+              </select>
+            </label>
+          }
+
+          <label class="text-theme-sm text-gray-700 dark:text-gray-300">
+            {{ targetType === 'agent' ? 'Agent account' : 'User account' }}
+            <select [(ngModel)]="selectedTargetId" (ngModelChange)="onTargetChange()" class="mt-1.5 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:text-gray-200">
+              <option value="">Select an account</option>
+              @for (target of availableTargets; track target.id) {
+                <option [value]="target.id">{{ target.name }} ({{ target.uniqueId }})</option>
+              }
+            </select>
+          </label>
+
+          <label class="text-theme-sm text-gray-700 dark:text-gray-300">
+            Request
+            <select [(ngModel)]="requestType" class="mt-1.5 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:text-gray-200">
+              <option value="ADD_POINTS">Add points</option>
+              <option value="WITHDRAW">Redeem points</option>
+            </select>
+          </label>
+
+          <label class="text-theme-sm text-gray-700 dark:text-gray-300">
+            {{ requestType === 'ADD_POINTS' ? 'Points to add' : 'Points to redeem' }}
+            <input [(ngModel)]="amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="Enter points" class="mt-1.5 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-gray-800 placeholder:text-gray-400 dark:border-gray-700 dark:text-gray-200" />
+          </label>
+        </div>
+        <button type="button" (click)="submitPointsRequest()" [disabled]="isSubmitting || !selectedTarget" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-brand-500 px-5 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60">
+          {{ isSubmitting ? 'Submitting...' : requestType === 'ADD_POINTS' ? 'Submit add-points request' : 'Submit redeem request' }}
+        </button>
+      }
+    </section>
+  }
+
+  <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+    <div class="flex flex-col justify-between gap-3 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:px-5 dark:border-gray-800">
+      <div>
+        <h2 class="font-semibold text-gray-800 dark:text-white/90">Wallet requests</h2>
+        @if (isUser) {
+          <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">Requests addressed to your account</p>
+        } @else if (selectedTarget) {
+          <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">Requests for {{ selectedTarget.name }}</p>
+        } @else {
+          <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">Select an account to view its request history.</p>
+        }
+      </div>
+      <button type="button" (click)="refreshRequests()" [disabled]="isLoadingRequests || (!isUser && !selectedTarget)" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 text-theme-sm font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+        {{ isLoadingRequests ? 'Refreshing...' : 'Refresh' }}
+      </button>
+    </div>
+
+    @if (isLoadingRequests) {
+      <div class="px-5 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">Loading wallet requests...</div>
+    } @else if (!isUser && !selectedTarget) {
+      <div class="px-5 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">Choose an account above to view its requests.</div>
+    } @else if (requests.length === 0) {
+      <div class="px-5 py-12 text-center text-theme-sm text-gray-500 dark:text-gray-400">No wallet requests found.</div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="min-w-[760px] w-full text-start text-theme-sm">
+          <thead class="bg-gray-50 dark:bg-white/[0.02]">
+            <tr class="text-gray-500 dark:text-gray-400">
+              <th class="px-5 py-3 font-medium">Request</th>
+              <th class="px-5 py-3 font-medium">Type</th>
+              <th class="px-5 py-3 font-medium">Points</th>
+              <th class="px-5 py-3 font-medium">Status</th>
+              <th class="px-5 py-3 font-medium">Submitted</th>
+              <th class="px-5 py-3 text-end font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            @for (request of requests; track request.id) {
+              <tr class="text-gray-700 dark:text-gray-300">
+                <td class="whitespace-nowrap px-5 py-4 font-medium text-gray-800 dark:text-white/90">#{{ request.id }}</td>
+                <td class="whitespace-nowrap px-5 py-4">{{ request.type === 'ADD_POINTS' ? 'Add points' : 'Withdrawal' }}</td>
+                <td class="whitespace-nowrap px-5 py-4 font-medium">{{ request.amount }}</td>
+                <td class="whitespace-nowrap px-5 py-4">
+                  <span class="rounded-full px-2.5 py-1 text-theme-xs font-medium"
+                    [ngClass]="request.status === 'PENDING' ? 'bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-400' : request.status === 'ACCEPTED' ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400' : 'bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-400'">
+                    {{ request.status | titlecase }}
+                  </span>
+                </td>
+                <td class="whitespace-nowrap px-5 py-4">{{ request.createdAt | date: 'dd MMM yyyy, h:mm a' }}</td>
+                <td class="whitespace-nowrap px-5 py-4 text-end">
+                  @if (request.status === 'PENDING') {
+                    <div class="flex justify-end gap-2">
+                      <button type="button" (click)="processRequest(request, 'approve')" [disabled]="processingRequestId === request.id" class="rounded-md border border-success-200 px-2.5 py-1.5 text-theme-xs font-medium text-success-700 hover:bg-success-25 disabled:opacity-50 dark:border-success-500/30 dark:text-success-400 dark:hover:bg-success-500/10">Approve</button>
+                      <button type="button" (click)="processRequest(request, 'decline')" [disabled]="processingRequestId === request.id" class="rounded-md border border-error-200 px-2.5 py-1.5 text-theme-xs font-medium text-error-600 hover:bg-error-50 disabled:opacity-50 dark:border-error-500/30 dark:text-error-400 dark:hover:bg-error-500/10">Decline</button>
+                    </div>
+                  } @else {
+                    <span class="text-gray-400">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

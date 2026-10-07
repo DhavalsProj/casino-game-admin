@@ -3,7 +3,6 @@ import { Component, ElementRef, QueryList, ViewChildren, ChangeDetectorRef } fro
 import { SidebarService } from '../../services/sidebar.service';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { SafeHtmlPipe } from '../../pipe/safe-html.pipe';
-import { SidebarWidgetComponent } from './app-sidebar-widget.component';
 import { combineLatest, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 
@@ -21,7 +20,6 @@ type NavItem = {
     CommonModule,
     RouterModule,
     SafeHtmlPipe,
-    SidebarWidgetComponent
   ],
   templateUrl: './app-sidebar.component.html',
 })
@@ -50,6 +48,16 @@ export class AppSidebarComponent {
       icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 20C16 18.3431 13.7614 17 11 17C8.23858 17 6 18.3431 6 20M11 14C8.79086 14 7 12.2091 7 10C7 7.79086 8.79086 6 11 6C13.2091 6 15 7.79086 15 10C15 12.2091 13.2091 14 11 14ZM18 13C19.6569 13 21 11.6569 21 10C21 8.34315 19.6569 7 18 7M18 17C20.7614 17 23 18.3431 23 20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
       name: "User Management",
       path: "/users",
+    },
+    {
+      icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+      name: "Wallet Insert",
+      path: "/wallet",
+    },
+    {
+      icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8v4l2.5 2.5M20 12a8 8 0 1 1-2.35-5.65M20 4v5h-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+      name: "Transactions",
+      path: "/transactions",
     },
     {
       name: "Forms",
@@ -129,10 +137,14 @@ export class AppSidebarComponent {
 
   get visibleNavItems(): NavItem[] {
     if (this.authService.role === 'user') {
-      return this.navItems.filter((item) => item.name === 'Dashboard' || item.name === 'User Profile');
+      return this.navItems.filter((item) =>
+        ['Dashboard', 'User Profile', 'Wallet Insert', 'Transactions'].includes(item.name),
+      );
     }
     if (this.authService.role === 'agent') {
-      return this.navItems.filter((item) => item.name === 'Dashboard' || item.name === 'User Profile' || item.name === 'User Management');
+      return this.navItems.filter((item) =>
+        ['Dashboard', 'User Profile', 'User Management', 'Wallet Insert', 'Transactions'].includes(item.name),
+      );
     }
     return this.navItems;
   }

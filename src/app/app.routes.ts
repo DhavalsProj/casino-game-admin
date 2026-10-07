@@ -20,6 +20,8 @@ import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
 import { CalenderComponent } from './pages/calender/calender.component';
 import { UserManagementComponent } from './pages/users/user-management/user-management.component';
 import { UserCreateComponent } from './pages/users/user-create/user-create.component';
+import { WalletManagementComponent } from './pages/wallet/wallet-management/wallet-management.component';
+import { TransactionHistoryComponent } from './pages/transactions/transaction-history/transaction-history.component';
 import { authGuard } from './shared/guards/auth.guard';
 
 export const routes: Routes = [
@@ -58,6 +60,20 @@ export const routes: Routes = [
         canActivate: [authGuard],
         data: { roles: ['superadmin', 'admin', 'agent'] },
         title:'Create User | TailAdmin - Angular Admin Dashboard Template'
+      },
+      {
+        path: 'wallet',
+        component: WalletManagementComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
+        title: 'Wallet Points | TailAdmin - Angular Admin Dashboard Template',
+      },
+      {
+        path: 'transactions',
+        component: TransactionHistoryComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
+        title: 'Transaction History | TailAdmin - Angular Admin Dashboard Template',
       },
       {
         path:'form-elements',
