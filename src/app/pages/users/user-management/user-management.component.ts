@@ -97,7 +97,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     this.usersRequest?.unsubscribe();
     this.isLoading = this.users.length === 0;
     this.errorMessage = '';
-    this.usersRequest = this.userService.getUsers(this.filter).subscribe({
+    const userType = this.userService.role === 'agent' ? 'user' : this.filter;
+    this.usersRequest = this.userService.getUsers(userType).subscribe({
       next: (users) => {
         this.users = users;
         this.currentPage = 1;
@@ -128,7 +129,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   deleteUser(user: ManagedUser): void {
-    if (!this.userService.canManage || !window.confirm(`Delete ${user.name}? This action cannot be undone.`)) {
+    if (!this.userService.canDeleteUsers || !window.confirm(`Delete ${user.name}? This action cannot be undone.`)) {
       return;
     }
 

@@ -1,10 +1,10 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { AuthService } from '../services/auth.service';
 
 export const HttpAuthInterceptor: HttpInterceptorFn = (request, next) => {
-  const router = inject(Router);
+  const authService = inject(AuthService);
   const storedSession = sessionStorage.getItem('casino-auth-session');
   if (!storedSession) {
     return next(request);
@@ -24,8 +24,7 @@ export const HttpAuthInterceptor: HttpInterceptorFn = (request, next) => {
   return next(request).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        sessionStorage.removeItem('casino-auth-session');
-        void router.navigate(['/signin']);
+        authService.expireSession();
       }
 
       return throwError(() => error);

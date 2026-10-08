@@ -40,7 +40,8 @@ export class ApplicationDataService {
       ? forkJoin({ users: this.userService.getUsers('user'), agents: this.userService.getAgents() })
       : currentUser.role === 'agent'
         ? this.userService.getUsers('user').pipe(map((users) => ({
-            users: users.filter((user) => user.agentId === currentUser.uniqueId),
+            // The authenticated API must scope this list to the current agent.
+            users,
             agents: [] as ManagedUser[],
           })))
         : of({ users: [] as ManagedUser[], agents: [] as ManagedUser[] });

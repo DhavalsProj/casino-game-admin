@@ -37,14 +37,13 @@
           @if (isAdmin) {
             <label class="text-theme-sm text-gray-700 dark:text-gray-300">
               Account type
-              <select [(ngModel)]="targetType" (ngModelChange)="onTargetTypeChange()" class="mt-1.5 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:text-gray-200">
+              <select [ngModel]="targetType" disabled class="mt-1.5 h-11 w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-3 text-gray-500 dark:border-gray-700 dark:bg-white/5 dark:text-gray-400">
                 <option value="user">User</option>
-                <option value="agent">Agent</option>
               </select>
             </label>
           }
 
-          @if (isAdmin && targetType === 'user') {
+          @if (isAdmin) {
             <label class="text-theme-sm text-gray-700 dark:text-gray-300">
               Agent
               <select [(ngModel)]="selectedAgentId" (ngModelChange)="onAgentChange()" class="mt-1.5 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:text-gray-200">
@@ -57,7 +56,7 @@
           }
 
           <label class="text-theme-sm text-gray-700 dark:text-gray-300">
-            {{ targetType === 'agent' ? 'Agent account' : 'User account' }}
+            User account
             <select [(ngModel)]="selectedTargetId" (ngModelChange)="onTargetChange()" class="mt-1.5 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:text-gray-200">
               <option value="">Select an account</option>
               @for (target of availableTargets; track target.id) {

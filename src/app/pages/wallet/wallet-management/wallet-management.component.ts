@@ -8,7 +8,6 @@ import { AuthService } from '../../../shared/services/auth.service';
 import { ManagedUser, UserService } from '../../../shared/services/user.service';
 import { WalletRequest, WalletRequestType, WalletService } from '../../../shared/services/wallet.service';
 
-type WalletTargetType = 'user' | 'agent';
 type RequestAction = 'approve' | 'decline';
 
 @Component({
@@ -21,7 +20,7 @@ export class WalletManagementComponent implements OnInit, OnDestroy {
   users: ManagedUser[] = [];
   agents: ManagedUser[] = [];
   requests: WalletRequest[] = [];
-  targetType: WalletTargetType = 'user';
+  readonly targetType = 'user';
   selectedAgentId = '';
   selectedTargetId = '';
   requestType: WalletRequestType = 'ADD_POINTS';
@@ -88,18 +87,12 @@ export class WalletManagementComponent implements OnInit, OnDestroy {
   }
 
   get availableTargets(): ManagedUser[] {
-    return this.targetType === 'agent' ? this.agents : this.availableUsers;
+    return this.availableUsers;
   }
 
   get selectedTarget(): ManagedUser | null {
     const targetId = Number(this.selectedTargetId);
     return this.availableTargets.find((target) => target.id === targetId) ?? null;
-  }
-
-  onTargetTypeChange(): void {
-    this.selectedAgentId = '';
-    this.selectedTargetId = '';
-    this.requests = [];
   }
 
   onAgentChange(): void {

@@ -1,9 +1,7 @@
 import { Routes } from '@angular/router';
 import { EcommerceComponent } from './pages/dashboard/ecommerce/ecommerce.component';
 import { ProfileComponent } from './pages/profile/profile.component';
-import { FormElementsComponent } from './pages/forms/form-elements/form-elements.component';
 import { BasicTablesComponent } from './pages/tables/basic-tables/basic-tables.component';
-import { BlankComponent } from './pages/blank/blank.component';
 import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
 import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
 import { InvoicesComponent } from './pages/invoices/invoices.component';
@@ -30,27 +28,33 @@ export const routes: Routes = [
     path:'',
     component:AppLayoutComponent,
     canActivate: [authGuard],
+    canActivateChild: [authGuard],
+    data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
     children:[
       {
         path: '',
         component: EcommerceComponent,
         pathMatch: 'full',
+        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
         title: 'CasinoAdmin',
       },
       {
         path:'calendar',
         component:CalenderComponent,
+        data: { roles: ['superadmin', 'admin', 'agent'] },
         title: 'CasinoAdmin'
       },
       {
         path:'profile',
         component:ProfileComponent,
+        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
         title: 'CasinoAdmin'
       },
       {
         path: 'profile/edit',
         component: UserCreateComponent,
         canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
         title: 'CasinoAdmin'
       },
       {
@@ -92,14 +96,14 @@ export const routes: Routes = [
         path:'users/edit/:id',
         component:UserCreateComponent,
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin'] },
+        data: { roles: ['superadmin', 'admin', 'agent'] },
         title: 'CasinoAdmin'
       },
       {
         path:'user-profile/edit/:id',
         component:UserCreateComponent,
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin'] },
+        data: { roles: ['superadmin', 'admin', 'agent'] },
         title: 'CasinoAdmin'
       },
       {
@@ -127,7 +131,7 @@ export const routes: Routes = [
         path: 'transactions/manage',
         component: TransactionHistoryComponent,
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
+        data: { roles: ['superadmin', 'admin', 'agent'] },
         title: 'CasinoAdmin',
       },
       {
@@ -138,64 +142,64 @@ export const routes: Routes = [
         title: 'CasinoAdmin',
       },
       {
-        path:'form-elements',
-        component:FormElementsComponent,
-        title: 'CasinoAdmin'
-      },
-      {
         path:'basic-tables',
         component:BasicTablesComponent,
-        title: 'CasinoAdmin'
-      },
-      {
-        path:'blank',
-        component:BlankComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
       // support tickets
       {
         path:'invoice',
         component:InvoicesComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
       {
         path:'line-chart',
         component:LineChartComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
       {
         path:'bar-chart',
         component:BarChartComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
       {
         path:'alerts',
         component:AlertsComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
       {
         path:'avatars',
         component:AvatarElementComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
       {
         path:'badge',
         component:BadgesComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
       {
         path:'buttons',
         component:ButtonsComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
       {
         path:'images',
         component:ImagesComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
       {
         path:'videos',
         component:VideosComponent,
+        data: { roles: ['superadmin', 'admin'] },
         title: 'CasinoAdmin'
       },
     ]

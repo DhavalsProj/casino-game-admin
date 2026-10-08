@@ -13,7 +13,10 @@ export const authGuard: CanActivateFn = (route, state) => {
     });
   }
 
-  const allowedRoles = route.data['roles'] as UserRole[] | undefined;
+  // Routes without an explicit role list remain available to existing admin/user
+  // accounts, while agents must be explicitly allowed into each feature.
+  const allowedRoles = (route.data['roles'] as UserRole[] | undefined)
+    ?? (authService.role === 'agent' ? ['superadmin', 'admin'] : undefined);
   if (allowedRoles && !allowedRoles.includes(authService.role!)) {
     return router.createUrlTree(['/']);
   }

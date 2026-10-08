@@ -19,6 +19,7 @@ export class UserCreateComponent implements OnInit {
   isLoadingUser = false;
   userLoadFailed = false;
   isProfileEdit = false;
+  isLoadingAgents = false;
   editUserId: number | null = null;
   editingUser: ManagedUser | null = null;
   errorMessage = '';
@@ -83,23 +84,32 @@ export class UserCreateComponent implements OnInit {
       this.router.navigate(['/users']);
       return;
     }
-    if (this.isAgent) {
-      this.userForm.patchValue({ type: 'user' });
-      this.userForm.get('type')?.disable();
-      this.userForm.get('agentId')?.disable();
-      return;
-    }
     const routeId = this.route.snapshot.paramMap.get('id');
     if (routeId !== null) {
       const id = Number(routeId);
-      if (!Number.isSafeInteger(id) || id <= 0 || !this.userService.canManage) {
+      if (!Number.isSafeInteger(id) || id <= 0 || !this.userService.canEditUsers) {
         this.router.navigate(['/users']);
         return;
       }
       this.editUserId = id;
       this.userForm.get('type')?.disable({ emitEvent: false });
-      this.userForm.get('agentId')?.disable({ emitEvent: false });
-      this.userService.getAgents().subscribe({ next: (agents) => this.agents = agents });
+      if (this.isAdmin) {
+        this.userForm.get('agentId')?.clearValidators();
+        this.userForm.get('agentId')?.enable({ emitEvent: false });
+        this.isLoadingAgents = true;
+        this.userService.getAgents().subscribe({
+          next: (agents) => {
+            this.agents = agents;
+            this.isLoadingAgents = false;
+          },
+          error: () => {
+            this.errorMessage = 'Unable to load the agent list. Please refresh and try again.';
+            this.isLoadingAgents = false;
+          },
+        });
+      } else {
+        this.userForm.get('agentId')?.disable({ emitEvent: false });
+      }
       const navigationState = this.router.getCurrentNavigation()?.extras.state ?? window.history.state;
       const previewUser = navigationState['previewUser'] as ManagedUser | undefined;
       if (previewUser?.id === id) {
@@ -125,6 +135,12 @@ export class UserCreateComponent implements OnInit {
       });
       return;
     }
+    if (this.isAgent) {
+      this.userForm.patchValue({ type: 'user' });
+      this.userForm.get('type')?.disable();
+      this.userForm.get('agentId')?.disable();
+      return;
+    }
     this.userService.getAgents().subscribe((agents) => this.agents = agents);
     this.updateAgentRequirement();
   }
@@ -134,7 +150,7 @@ export class UserCreateComponent implements OnInit {
   }
 
   submit(): void {
-    if (this.isLoadingUser || this.userForm.invalid) {
+    if (this.isLoadingUser || this.isLoadingAgents || this.userForm.invalid) {
       this.userForm.markAllAsTouched();
       return;
     }
@@ -145,6 +161,9 @@ export class UserCreateComponent implements OnInit {
       this.userService.updateUser(this.editUserId, {
         name: rawValue.name ?? '',
         mobile: rawValue.mobile ?? '',
+        ...(this.isAdmin && this.editingUser?.type === 'user'
+          ? { agentId: rawValue.agentId || null }
+          : {}),
       }).pipe(finalize(() => this.isLoading = false)).subscribe({
         next: (updatedUser) => {
           if (this.isProfileEdit) {
@@ -162,7 +181,9 @@ export class UserCreateComponent implements OnInit {
       name: rawValue.name ?? '',
       mobile: rawValue.mobile ?? '',
       type: rawValue.type as ManagedUserType,
-      agentId: rawValue.agentId ?? undefined,
+      ...(rawValue.type === 'user' && rawValue.agentId
+        ? { agentId: rawValue.agentId }
+        : {}),
     }).pipe(
       finalize(() => this.isLoading = false),
     ).subscribe({
