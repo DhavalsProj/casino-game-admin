@@ -34,7 +34,7 @@
               <select [(ngModel)]="selectedAgentId" (ngModelChange)="onAgentChange()" class="mt-1.5 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-3 dark:border-gray-700 dark:text-gray-200">
                 <option value="">All agents</option>
                 @for (agent of agents; track agent.id) {
-                  <option [value]="agent.uniqueId">{{ agent.name }} ({{ agent.uniqueId }})</option>
+                  <option [value]="agent.id">{{ agent.name }} ({{ agent.uniqueId }})</option>
                 }
               </select>
             </label>
@@ -65,10 +65,10 @@
         }
       </div>
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
-        @if (isManagementPage) {
+        @if (isManagementPage || isGridPage) {
           <label class="text-theme-xs text-gray-500 dark:text-gray-400">
             Transaction Type
-            <select [(ngModel)]="transactionType" class="mt-1 block h-10 w-full min-w-36 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
+            <select [(ngModel)]="transactionType" (ngModelChange)="onFiltersChange()" class="mt-1 block h-10 w-full min-w-36 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-700 dark:border-gray-700 dark:text-gray-300">
               <option value="all">All Types</option>
               <option value="CREDIT">Credit</option>
               <option value="DEBIT">Debit</option>
@@ -76,7 +76,7 @@
           </label>
           <label class="text-theme-xs text-gray-500 dark:text-gray-400">
             Search
-            <input [(ngModel)]="search" type="search" placeholder="Search transaction history" class="mt-1 block h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-700 placeholder:text-gray-400 dark:border-gray-700 dark:text-gray-300 sm:min-w-56" />
+            <input [(ngModel)]="search" (ngModelChange)="onFiltersChange()" type="search" placeholder="Search transaction history" class="mt-1 block h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-700 placeholder:text-gray-400 dark:border-gray-700 dark:text-gray-300 sm:min-w-56" />
           </label>
         }
         <button type="button" (click)="refreshTransactions()" [disabled]="isLoadingTransactions || (!isUser && !selectedTarget)" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 text-theme-sm font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
@@ -108,7 +108,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-            @for (transaction of filteredTransactions; track transaction.id) {
+            @for (transaction of pagedTransactions; track transaction.id) {
               <tr class="text-gray-700 dark:text-gray-300">
                 <td class="whitespace-nowrap px-5 py-4">{{ transaction.createdAt | date: 'dd MMM yyyy, h:mm a' }}</td>
                 <td class="whitespace-nowrap px-5 py-4">
@@ -125,6 +125,14 @@
             }
           </tbody>
         </table>
+      </div>
+      <div class="flex flex-col items-center justify-between gap-3 border-t border-gray-200 px-4 py-3 text-theme-xs text-gray-500 dark:border-gray-800 dark:text-gray-400 sm:flex-row sm:px-5">
+        <span>Showing {{ pageStart }}–{{ pageEnd }} of {{ filteredTransactions.length }}</span>
+        <div class="flex items-center gap-2">
+          <button type="button" (click)="previousPage()" [disabled]="currentPage === 1" class="rounded-lg border border-gray-300 px-3 py-2 font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-white/5">Previous</button>
+          <span>Page {{ currentPage }} of {{ pageCount }}</span>
+          <button type="button" (click)="nextPage()" [disabled]="currentPage === pageCount" class="rounded-lg border border-gray-300 px-3 py-2 font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:hover:bg-white/5">Next</button>
+        </div>
       </div>
     }
   </section>

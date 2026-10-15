@@ -52,8 +52,8 @@
         <label class="sm:col-span-2">
           <span class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-300">Agent</span>
           <select formControlName="agentId" class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-700 outline-none focus:border-brand-500 disabled:cursor-not-allowed disabled:opacity-70 dark:border-gray-700 dark:text-gray-300">
-            <option value="">{{ editUserId !== null ? 'No agent assigned' : 'Select an agent' }}</option>
-            @for (agent of agents; track agent.id) { <option [value]="agent.uniqueId">{{ agent.name }} - {{ agent.uniqueId }}</option> }
+            <option [ngValue]="''">{{ editUserId !== null ? 'No agent assigned' : 'Select an agent' }}</option>
+            @for (agent of agents; track agent.id) { <option [ngValue]="agent.id">{{ agent.name }} - {{ agent.uniqueId }}</option> }
           </select>
           @if (editUserId === null && userForm.controls['agentId'].touched && userForm.controls['agentId'].invalid) { <span class="mt-1 block text-theme-xs text-error-500">Select an agent.</span> }
         </label>

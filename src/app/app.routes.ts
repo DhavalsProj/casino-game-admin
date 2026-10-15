@@ -65,6 +65,13 @@ export const routes: Routes = [
         title: 'CasinoAdmin'
       },
       {
+        path:'users/grid',
+        component:UserManagementComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent'] },
+        title: 'CasinoAdmin'
+      },
+      {
         path:'user-profile',
         component:UserManagementComponent,
         canActivate: [authGuard],
@@ -73,6 +80,13 @@ export const routes: Routes = [
       },
       {
         path:'wallet-transfer/manage',
+        component:WalletTransferListComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent'] },
+        title: 'CasinoAdmin'
+      },
+      {
+        path:'wallet-transfer/grid',
         component:WalletTransferListComponent,
         canActivate: [authGuard],
         data: { roles: ['superadmin', 'admin', 'agent'] },
@@ -114,6 +128,13 @@ export const routes: Routes = [
         title: 'CasinoAdmin'
       },
       {
+        path:'wallet-transfer/edit/:id',
+        component:WalletManagementComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
+        title: 'CasinoAdmin'
+      },
+      {
         path:'wallet-transfer',
         component:WalletTransferListComponent,
         canActivate: [authGuard],
@@ -129,6 +150,13 @@ export const routes: Routes = [
       },
       {
         path: 'transactions/manage',
+        component: TransactionHistoryComponent,
+        canActivate: [authGuard],
+        data: { roles: ['superadmin', 'admin', 'agent'] },
+        title: 'CasinoAdmin',
+      },
+      {
+        path: 'transactions/grid',
         component: TransactionHistoryComponent,
         canActivate: [authGuard],
         data: { roles: ['superadmin', 'admin', 'agent'] },

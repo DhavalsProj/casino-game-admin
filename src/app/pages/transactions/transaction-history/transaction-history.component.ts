@@ -20,6 +20,8 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
   users: ManagedUser[] = [];
   agents: ManagedUser[] = [];
   transactions: WalletTransaction[] = [];
+  readonly pageSize = 10;
+  currentPage = 1;
   targetType: TransactionTargetType = 'user';
   selectedAgentId = '';
   selectedTargetId = '';
@@ -69,8 +71,12 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     return this.router.url.split('?')[0] === '/transactions/manage';
   }
 
+  get isGridPage(): boolean {
+    return this.router.url.split('?')[0] === '/transactions/grid';
+  }
+
   get filteredTransactions(): WalletTransaction[] {
-    if (!this.isManagementPage) {
+    if (!this.isManagementPage && !this.isGridPage) {
       return this.transactions;
     }
     const query = this.search.trim().toLowerCase();
@@ -92,9 +98,38 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     });
   }
 
+  get pagedTransactions(): WalletTransaction[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredTransactions.slice(start, start + this.pageSize);
+  }
+
+  get pageCount(): number {
+    return Math.max(1, Math.ceil(this.filteredTransactions.length / this.pageSize));
+  }
+
+  get pageStart(): number {
+    return this.filteredTransactions.length === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get pageEnd(): number {
+    return Math.min(this.currentPage * this.pageSize, this.filteredTransactions.length);
+  }
+
+  onFiltersChange(): void {
+    this.currentPage = 1;
+  }
+
+  previousPage(): void {
+    this.currentPage = Math.max(1, this.currentPage - 1);
+  }
+
+  nextPage(): void {
+    this.currentPage = Math.min(this.pageCount, this.currentPage + 1);
+  }
+
   get availableUsers(): ManagedUser[] {
     if (this.isAdmin && this.selectedAgentId) {
-      return this.users.filter((user) => user.agentId === this.selectedAgentId);
+      return this.users.filter((user) => user.agentId === Number(this.selectedAgentId));
     }
     return this.users;
   }
@@ -115,6 +150,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
   }
 
   onTargetTypeChange(): void {
+    this.currentPage = 1;
     this.selectedAgentId = '';
     this.selectedTargetId = '';
     this.transactions = [];
@@ -122,12 +158,14 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
   }
 
   onAgentChange(): void {
+    this.currentPage = 1;
     this.selectedTargetId = '';
     this.transactions = [];
     this.errorMessage = '';
   }
 
   onTargetChange(): void {
+    this.currentPage = 1;
     this.transactions = [];
     this.errorMessage = '';
     if (this.selectedTarget) {
@@ -158,7 +196,9 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
       agents: agents$,
     }).subscribe({
       next: ({ users, agents }) => {
-        this.users = users;
+        this.users = this.isGridPage && this.authService.role === 'agent'
+          ? users.filter((user) => user.agentId === this.authService.currentUser?.id)
+          : users;
         this.agents = agents;
         this.isLoadingTargets = false;
         this.changeDetector.detectChanges();
@@ -177,6 +217,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     this.subscriptions.add(this.walletService.getTransactionsForUser(userId).subscribe({
       next: (transactions) => {
         this.transactions = transactions;
+        this.currentPage = 1;
         this.isLoadingTransactions = false;
         this.changeDetector.detectChanges();
       },

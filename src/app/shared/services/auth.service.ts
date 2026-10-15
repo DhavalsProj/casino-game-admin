@@ -11,7 +11,7 @@ export interface AuthenticatedUser {
   mobile: string;
   uniqueId: string;
   role: UserRole;
-  agentId?: string;
+  agentId?: number;
   token: string;
 }
 
@@ -22,7 +22,7 @@ interface LoginResponse {
     name: string;
     mobile: string;
     type: string;
-    agentId: string | null;
+    agentId: number | null;
     uniqueId: string;
   };
 }
@@ -80,6 +80,13 @@ export class AuthService {
 
   logout(): void {
     this.expireSession();
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/auth/change-password`, {
+      currentPassword,
+      newPassword,
+    });
   }
 
   expireSession(): void {

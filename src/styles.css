@@ -193,6 +193,12 @@ layer(base);
   body {
     @apply relative font-normal font-outfit z-1 bg-gray-50;
   }
+  table {
+    border-collapse: collapse;
+  }
+  table th {
+    text-align: start;
+  }
 }
 
 @utility menu-item {

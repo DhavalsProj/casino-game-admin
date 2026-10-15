@@ -7,7 +7,7 @@ import { InputFieldComponent } from '../../form/input/input-field.component';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-signin-form',
@@ -32,13 +32,14 @@ export class SigninFormComponent {
   errorMessage = '';
   isSubmitting = false;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router, private route: ActivatedRoute) {}
 
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
 
   onSignIn() {
+    if (this.isSubmitting) return;
     if (!this.identifier.trim() || !this.password) {
       this.errorMessage = 'Enter your identifier and password.';
       return;
@@ -49,7 +50,11 @@ export class SigninFormComponent {
     this.authService.login(this.identifier, this.password).subscribe({
       next: () => {
         this.isSubmitting = false;
-        void this.router.navigate(['/']);
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        const destination = returnUrl?.startsWith('/') && !returnUrl.startsWith('//')
+          ? returnUrl
+          : '/';
+        void this.router.navigateByUrl(destination);
       },
       error: (error: unknown) => {
         this.isSubmitting = false;

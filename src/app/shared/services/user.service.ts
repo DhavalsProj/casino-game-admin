@@ -21,7 +21,7 @@ export interface ManagedUser {
   name: string;
   mobile: string;
   type: ManagedUserType;
-  agentId: string | null;
+  agentId: number | null;
   agentName: string | null;
   uniqueId: string;
   createdAt: string;
@@ -32,7 +32,7 @@ export interface CreateUserRequest {
   name: string;
   mobile: string;
   type?: ManagedUserType;
-  agentId?: string;
+  agentId?: number;
 }
 
 export interface CreateUserResponse {
@@ -45,7 +45,7 @@ interface ApiUser {
   name: string;
   mobile: string;
   type: ManagedUserType;
-  agentId: string | null;
+  agentId: number | null;
   agentName?: string | null;
   uniqueId: string;
   createdAt: string;
@@ -135,7 +135,7 @@ export class UserService {
 
   updateUser(
     id: number,
-    changes: Pick<ManagedUser, 'name' | 'mobile'> & { agentId?: string | null },
+    changes: Pick<ManagedUser, 'name' | 'mobile'> & { agentId?: number | null },
   ): Observable<ManagedUser> {
     return this.http.patch<ApiUser>(`${this.apiUrl}/users/${id}`, {
       name: changes.name,

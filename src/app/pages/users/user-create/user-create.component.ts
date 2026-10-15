@@ -6,6 +6,7 @@ import { finalize, TimeoutError } from 'rxjs';
 import { AuthService } from '../../../shared/services/auth.service';
 import { UserService, ManagedUser, ManagedUserType } from '../../../shared/services/user.service';
 import { UserFeedbackService } from '../../../shared/services/user-feedback.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-user-create',
@@ -150,7 +151,7 @@ export class UserCreateComponent implements OnInit {
   }
 
   submit(): void {
-    if (this.isLoadingUser || this.isLoadingAgents || this.userForm.invalid) {
+    if (this.isLoading || this.isLoadingUser || this.isLoadingAgents || this.userForm.invalid) {
       this.userForm.markAllAsTouched();
       return;
     }
@@ -173,7 +174,7 @@ export class UserCreateComponent implements OnInit {
           }
           void this.router.navigate(['/users'], { state: { successMessage: 'User updated successfully.' } });
         },
-        error: (error: Error) => this.errorMessage = error.message || 'Unable to update this user.',
+        error: (error: unknown) => this.errorMessage = this.getErrorMessage(error, 'Unable to update this user.'),
       });
       return;
     }
@@ -182,7 +183,7 @@ export class UserCreateComponent implements OnInit {
       mobile: rawValue.mobile ?? '',
       type: rawValue.type as ManagedUserType,
       ...(rawValue.type === 'user' && rawValue.agentId
-        ? { agentId: rawValue.agentId }
+        ? { agentId: Number(rawValue.agentId) }
         : {}),
     }).pipe(
       finalize(() => this.isLoading = false),
@@ -191,10 +192,10 @@ export class UserCreateComponent implements OnInit {
         this.userFeedbackService.setCreationFeedback({ user: result.user, password: result.password });
         void this.router.navigate(['/users']);
       },
-      error: (error: Error) => {
-        this.errorMessage = error.name === 'TimeoutError'
+      error: (error: unknown) => {
+        this.errorMessage = error instanceof TimeoutError
           ? 'The server took too long to respond. Please try again.'
-          : error.message;
+          : this.getErrorMessage(error, 'Unable to create this user.');
       },
     });
   }
@@ -217,5 +218,14 @@ export class UserCreateComponent implements OnInit {
       type: user.type,
       agentId: user.agentId ?? '',
     });
+  }
+
+  private getErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof HttpErrorResponse) {
+      const message = error.error?.message;
+      if (Array.isArray(message)) return message.join(' ');
+      if (typeof message === 'string' && message.trim()) return message;
+    }
+    return error instanceof Error && error.message ? error.message : fallback;
   }
 }

@@ -50,9 +50,31 @@ export class WalletService {
     }).pipe(timeout({ first: 15000 }));
   }
 
+  updateRequest(
+    requestId: number,
+    changes: { amount?: string; type?: WalletRequestType },
+  ): Observable<WalletRequest> {
+    return this.http.patch<WalletRequest>(
+      `${this.apiUrl}/wallet/requests/${requestId}`,
+      changes,
+    ).pipe(timeout({ first: 15000 }));
+  }
+
+  deleteRequest(requestId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.apiUrl}/wallet/requests/${requestId}`,
+    ).pipe(timeout({ first: 15000 }));
+  }
+
   getRequestsForUser(userId: number): Observable<WalletRequest[]> {
     return this.http.get<WalletRequest[]>(`${this.apiUrl}/wallet/requests/${userId}`)
       .pipe(timeout({ first: 15000 }));
+  }
+
+  getRequest(requestId: number): Observable<WalletRequest> {
+    return this.http.get<WalletRequest>(
+      `${this.apiUrl}/wallet/requests/detail/${requestId}`,
+    ).pipe(timeout({ first: 15000 }));
   }
 
   approveRequest(requestId: number): Observable<WalletRequest> {

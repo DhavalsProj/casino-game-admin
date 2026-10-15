@@ -26,8 +26,10 @@ export class WalletTransferListComponent implements OnInit, OnDestroy {
   successMessage = '';
   search = '';
   currentPage = 1;
-  readonly pageSize = 20;
+  readonly pageSize = 10;
   selectedRequest: WalletRequestRow | null = null;
+  requestToDelete: WalletRequestRow | null = null;
+  deletingRequestId: number | null = null;
   private readonly subscriptions = new Subscription();
 
   constructor(
@@ -68,8 +70,56 @@ export class WalletTransferListComponent implements OnInit, OnDestroy {
     return this.router.url.split('?')[0] === '/wallet-transfer/manage';
   }
 
+  get isGridPage(): boolean {
+    return this.router.url.split('?')[0] === '/wallet-transfer/grid';
+  }
+
   viewRequest(request: WalletRequestRow): void {
     this.selectedRequest = request;
+  }
+
+  canEditRequest(request: WalletRequestRow): boolean {
+    return request.status === 'PENDING';
+  }
+
+  startEditing(request: WalletRequestRow): void {
+    if (!this.canEditRequest(request)) return;
+    void this.router.navigate(['/wallet-transfer/edit', request.id], {
+      queryParams: { returnTo: this.isManagementPage ? 'manage' : 'list' },
+    });
+  }
+
+  deleteRequest(request: WalletRequestRow): void {
+    if (!this.canEditRequest(request) || this.deletingRequestId !== null) return;
+    this.errorMessage = '';
+    this.requestToDelete = request;
+  }
+
+  cancelDeleteRequest(): void {
+    if (this.deletingRequestId !== null) return;
+    this.requestToDelete = null;
+  }
+
+  confirmDeleteRequest(): void {
+    const request = this.requestToDelete;
+    if (!request || !this.canEditRequest(request) || this.deletingRequestId !== null) return;
+    this.errorMessage = '';
+    this.deletingRequestId = request.id;
+    this.subscriptions.add(this.walletService.deleteRequest(request.id).subscribe({
+      next: () => {
+        this.requests = this.requests.filter((item) => item.id !== request.id);
+        if (this.selectedRequest?.id === request.id) this.selectedRequest = null;
+        this.requestToDelete = null;
+        this.currentPage = Math.min(this.currentPage, this.pageCount);
+        this.deletingRequestId = null;
+        this.successMessage = `Transfer request #${request.id} deleted.`;
+        this.changeDetector.detectChanges();
+      },
+      error: (error: unknown) => {
+        this.errorMessage = this.getErrorMessage(error, 'Unable to delete this transfer request.');
+        this.deletingRequestId = null;
+      },
+    }));
   }
 
   get pagedRequests(): WalletRequestRow[] {
@@ -114,7 +164,10 @@ export class WalletTransferListComponent implements OnInit, OnDestroy {
     const accounts$ = this.userService.getUsers('user');
     this.subscriptions.add(accounts$.subscribe({
       next: (users) => {
-        const accounts: Pick<ManagedUser, 'id' | 'name' | 'uniqueId'>[] = [...users];
+        const visibleUsers = this.isGridPage && this.authService.role === 'agent'
+          ? users.filter((user) => user.agentId === currentUser.id)
+          : users;
+        const accounts: Pick<ManagedUser, 'id' | 'name' | 'uniqueId'>[] = [...visibleUsers];
         if (this.authService.role === 'superadmin' || this.authService.role === 'admin') {
           this.subscriptions.add(this.userService.getAgents().subscribe({
             next: (agents) => this.loadAccountRequests([...accounts, ...agents]),
@@ -122,7 +175,7 @@ export class WalletTransferListComponent implements OnInit, OnDestroy {
           }));
           return;
         }
-        if (this.authService.role === 'agent') {
+        if (this.authService.role === 'agent' && !this.isGridPage) {
           accounts.push({
             id: currentUser.id,
             name: currentUser.name,

@@ -40,11 +40,7 @@ export class AppSidebarComponent {
     {
       name: "My Profile",
       icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 20c.8-3.1 3.4-5 7-5s6.2 1.9 7 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
-      subItems: [
-        { name: "User Profile", path: "/users", pro: false },
-        { name: "Wallet Transfer", path: "/wallet-transfer/manage", pro: false },
-        { name: "Transaction History", path: "/transactions/manage", pro: false },
-      ],
+      path: "/profile",
     },
     {
       name: "Tables",
@@ -111,28 +107,67 @@ export class AppSidebarComponent {
 
   get visibleNavItems(): NavItem[] {
     if (this.authService.role === 'superadmin') {
-      return this.navItems;
+      const [dashboard, calendar, profile, tables] = this.navItems;
+      return [
+        dashboard,
+        calendar,
+        profile,
+        {
+          name: 'User Profile',
+          path: '/user-profile',
+          icon: profile.icon,
+        },
+        {
+          name: 'Transfers',
+          icon: tables.icon,
+          subItems: [
+            { name: 'Wallet Transfer', path: '/wallet-transfer', pro: false },
+            { name: 'Transaction History', path: '/transactions', pro: false },
+          ],
+        },
+        {
+          ...tables,
+          subItems: [
+            { name: 'Users', path: '/users/grid', pro: false },
+            { name: 'Wallet', path: '/wallet-transfer/grid', pro: false },
+            { name: 'Transaction', path: '/transactions/grid', pro: false },
+            // { name: 'Basic Tables', path: '/basic-tables', pro: false },
+          ],
+        },
+      ];
     }
     if (this.authService.role === 'agent') {
-      return this.navItems
-        .filter((item) => ['Dashboard', 'Calendar', 'My Profile', 'Tables'].includes(item.name))
-        .map((item) => {
-          if (item.name === 'My Profile') {
-            return { ...item, subItems: [{ name: 'My Profile', path: '/profile', pro: false }] };
-          }
-          if (item.name === 'Tables') {
-            return {
-              ...item,
-              name: 'Operations',
-              subItems: [
-                { name: 'Users', path: '/users', pro: false },
-                { name: 'Wallet', path: '/wallet-transfer/manage', pro: false },
-                { name: 'History', path: '/transactions/manage', pro: false },
-              ],
-            };
-          }
-          return item;
-        });
+      const [dashboard, calendar, profile, tables] = this.navItems;
+      return [
+        dashboard,
+        calendar,
+        {
+          ...profile,
+          path: undefined,
+          subItems: [{ name: 'My Profile', path: '/profile', pro: false }],
+        },
+        {
+          name: 'User Profile',
+          path: '/user-profile',
+          icon: profile.icon,
+        },
+        {
+          name: 'Transfers',
+          icon: tables.icon,
+          subItems: [
+            { name: 'Wallet Transfer', path: '/wallet-transfer', pro: false },
+            { name: 'Transaction History', path: '/transactions', pro: false },
+          ],
+        },
+        {
+          ...tables,
+          subItems: [
+            { name: 'Users', path: '/users/grid', pro: false },
+            { name: 'Wallet', path: '/wallet-transfer/grid', pro: false },
+            { name: 'Transaction', path: '/transactions/grid', pro: false },
+          ],
+        },
+      ];
     }
     if (this.authService.role === 'user') {
       return this.navItems.filter((item) =>
@@ -213,7 +248,7 @@ export class AppSidebarComponent {
 
   private setActiveMenuFromRoute(currentUrl: string) {
     const menuGroups = [
-      { items: this.navItems, prefix: 'main' },
+      { items: this.visibleNavItems, prefix: 'main' },
       { items: this.othersItems, prefix: 'others' },
     ];
 

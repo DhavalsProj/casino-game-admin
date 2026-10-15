@@ -4,6 +4,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { Subscription, TimeoutError } from 'rxjs';
+import { AuthService } from '../../../shared/services/auth.service';
 import { UserService, ManagedUser, ManagedUserType } from '../../../shared/services/user.service';
 import { UserFeedbackService } from '../../../shared/services/user-feedback.service';
 
@@ -18,17 +19,20 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   filteredUsers: ManagedUser[] = [];
   filter: 'all' | ManagedUserType = 'all';
   search = '';
-  readonly pageSize = 25;
+  readonly pageSize = 10;
   currentPage = 1;
   isLoading = true;
   errorMessage = '';
   successMessage = '';
   createdCredentials: { user: ManagedUser; password: string } | null = null;
   selectedUser: ManagedUser | null = null;
+  userToDelete: ManagedUser | null = null;
+  deletingUserId: number | null = null;
   private usersRequest: Subscription | null = null;
 
   constructor(
     public userService: UserService,
+    private readonly authService: AuthService,
     private readonly userFeedbackService: UserFeedbackService,
     private readonly changeDetector: ChangeDetectorRef,
     private readonly router: Router,
@@ -60,7 +64,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   get isManagementPage(): boolean {
-    return this.router.url.split('?')[0] === '/users';
+    const path = this.router.url.split('?')[0];
+    return path === '/users' || path === '/user-profile';
+  }
+
+  get isReadOnlyGrid(): boolean {
+    return this.router.url.split('?')[0] === '/users/grid';
   }
 
   get pageCount(): number {
@@ -100,7 +109,9 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     const userType = this.userService.role === 'agent' ? 'user' : this.filter;
     this.usersRequest = this.userService.getUsers(userType).subscribe({
       next: (users) => {
-        this.users = users;
+        this.users = this.isReadOnlyGrid && this.authService.role === 'agent'
+          ? users.filter((user) => user.agentId === this.authService.currentUser?.id)
+          : users;
         this.currentPage = 1;
         this.updateFilteredUsers();
         this.isLoading = false;
@@ -129,14 +140,27 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   deleteUser(user: ManagedUser): void {
-    if (!this.userService.canDeleteUsers || !window.confirm(`Delete ${user.name}? This action cannot be undone.`)) {
-      return;
-    }
+    if (!this.userService.canDeleteUsers || this.deletingUserId !== null) return;
+    this.errorMessage = '';
+    this.userToDelete = user;
+  }
 
+  cancelDeleteUser(): void {
+    if (this.deletingUserId !== null) return;
+    this.userToDelete = null;
+    this.errorMessage = '';
+  }
+
+  confirmDeleteUser(): void {
+    const user = this.userToDelete;
+    if (!user || !this.userService.canDeleteUsers || this.deletingUserId !== null) return;
     this.errorMessage = '';
     this.successMessage = '';
+    this.deletingUserId = user.id;
     this.userService.deleteUser(user.id).subscribe({
       next: () => {
+        this.userToDelete = null;
+        this.deletingUserId = null;
         this.successMessage = `${user.name} was deleted successfully.`;
         this.loadUsers();
       },
@@ -144,6 +168,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
         this.errorMessage = error instanceof HttpErrorResponse && typeof error.error?.message === 'string'
           ? error.error.message
           : 'Unable to delete this user. Please try again.';
+        this.deletingUserId = null;
         this.changeDetector.detectChanges();
       },
     });
