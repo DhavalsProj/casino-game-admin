@@ -1,0 +1,235 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  font-family: var(--font-outfit), sans-serif;
+}
+
+.auth-page {
+  position: relative;
+  display: flex;
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: #f5f3ee;
+}
+
+.auth-form-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 53%;
+  min-height: 100dvh;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3.5rem clamp(2rem, 7vw, 7.5rem) 3.5rem clamp(2rem, 7vw, 7.5rem);
+  clip-path: polygon(0 0, 100% 0, 91% 100%, 0 100%);
+  background:
+    radial-gradient(ellipse at 0% 100%, rgb(192 155 82 / 8%), transparent 34%),
+    #f5f3ee;
+}
+
+.auth-brand-panel {
+  position: relative;
+  display: grid;
+  width: 53%;
+  margin-inline-start: -6%;
+  min-height: 100dvh;
+  overflow: hidden;
+  place-items: center;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 50% 44%, rgb(225 209 169 / 52%) 0%, transparent 38%),
+    radial-gradient(ellipse at 50% 100%, rgb(195 163 96 / 20%), transparent 43%),
+    linear-gradient(135deg, #f3efe4 0%, #e9e4d7 52%, #f6f2e8 100%);
+}
+
+.brand-glow,
+.brand-grain,
+.casino-art {
+  position: absolute;
+  pointer-events: none;
+}
+
+.brand-glow {
+  z-index: -1;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 9999px;
+  filter: blur(90px);
+}
+
+.brand-glow-one {
+  inset-block-start: 6%;
+  inset-inline-start: 4%;
+  background: rgb(179 133 48 / 12%);
+}
+
+.brand-glow-two {
+  inset-block-end: 0;
+  inset-inline-end: 2%;
+  background: rgb(40 79 59 / 18%);
+}
+
+.brand-grain {
+  z-index: -1;
+  inset: 0;
+  opacity: .17;
+  background-image: radial-gradient(rgb(255 233 179 / 62%) .55px, transparent .8px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(transparent, #000 20%, #000 78%, transparent);
+}
+
+.casino-art {
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  width: min(94%, 48rem);
+  transform: translate(-50%, -53%);
+  opacity: .58;
+}
+
+.brand-lockup {
+  inset-block-start: 68%;
+  inset-inline-start: 50%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.casino-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: .85rem;
+  color: #e9bf3f;
+  text-decoration: none;
+  filter: drop-shadow(0 0 24px rgb(215 178 94 / 18%));
+}
+
+.casino-logo-mark {
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  border: 1px solid rgb(229 196 112 / 52%);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgb(214 176 91 / 17%), rgb(0 17 38 / 92%));
+  box-shadow: inset 0 0 20px rgb(218 183 100 / 9%), 0 0 30px rgb(218 183 100 / 9%);
+}
+
+.casino-logo-mark svg {
+  width: 2.45rem;
+  height: 2.45rem;
+}
+
+.casino-logo-name {
+  color: #18231d;
+  font-size: clamp(2rem, 3vw, 3.15rem);
+  font-weight: 600;
+  letter-spacing: -.055em;
+  text-shadow: 0 0 28px rgb(186 143 54 / 13%);
+}
+
+.casino-logo-name span {
+  color: #e9bf3f;
+}
+
+.brand-tagline {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  margin-block-start: 1.15rem;
+  color: #85631f;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .28em;
+}
+
+.brand-tagline i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #bd9140;
+}
+
+.brand-caption {
+  margin-block-start: .7rem;
+  color: rgb(26 35 29 / 62%);
+  font-size: .9rem;
+  letter-spacing: .04em;
+}
+
+.auth-theme-toggle {
+  position: fixed;
+  z-index: 50;
+  inset-block-end: 1.5rem;
+  inset-inline-end: 1.5rem;
+}
+
+:host-context(.dark) .auth-page {
+  background: #00152b;
+}
+
+:host-context(.dark) .auth-form-panel {
+  background:
+    radial-gradient(ellipse at 0% 100%, rgb(194 153 70 / 7%), transparent 34%),
+    #00152b;
+}
+
+.dark .auth-brand-panel,
+:host-context(.dark) .auth-brand-panel {
+  background:
+    radial-gradient(ellipse at 51% 48%, rgb(15 45 66 / 88%) 0%, transparent 38%),
+    radial-gradient(ellipse at 50% 100%, rgb(233 191 63 / 17%), transparent 43%),
+    linear-gradient(135deg, #001b33 0%, #001126 52%, #00152b 100%);
+}
+
+:host-context(.dark) .casino-art {
+  opacity: .72;
+}
+
+:host-context(.dark) .casino-logo-name {
+  color: #fff8e9;
+  text-shadow: 0 0 28px rgb(237 210 145 / 18%);
+}
+
+:host-context(.dark) .brand-tagline {
+  color: #e9bf3f;
+}
+
+:host-context(.dark) .brand-caption {
+  color: rgb(240 234 218 / 55%);
+}
+
+@media (max-width: 1023px) {
+  .auth-page {
+    justify-content: center;
+  }
+
+  .auth-form-panel {
+    width: 100%;
+    min-height: 100dvh;
+    padding: 2rem 1.5rem 5rem;
+    clip-path: none;
+  }
+
+  .auth-brand-panel {
+    display: none;
+    margin-inline-start: 0;
+  }
+
+  .auth-theme-toggle {
+    inset-block-end: 1rem;
+    inset-inline-end: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

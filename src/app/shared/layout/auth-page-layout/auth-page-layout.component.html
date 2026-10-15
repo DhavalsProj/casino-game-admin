@@ -1,27 +1,98 @@
-<div class="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
-  <div
-    class="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900 sm:p-0"
-  >
+<div class="auth-page">
+  <main class="auth-form-panel">
     <ng-content></ng-content>
-    <div
-      class="items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-white/5 lg:grid relative"
-    >
-      <div class="flex items-center justify-center z-1">
-        <!-- ===== Common Grid Shape Start ===== -->
-        <app-grid-shape />
-        <div class="flex flex-col items-center max-w-xs">
-          <a routerLink="/" class="mb-4 inline-flex items-center gap-3">
-            <img src="/images/logo/logo-icon.svg" alt="CasinoAdmin" width="40" height="40" />
-            <span class="text-2xl font-semibold tracking-tight text-white">CasinoAdmin</span>
-          </a>
-          <!-- <p class="text-center text-gray-400 dark:text-white/60">
-            Free and Open-Source Tailwind CSS Admin Dashboard Template
-          </p> -->
-        </div>
-      </div>
+  </main>
+
+  <aside class="auth-brand-panel" aria-label="CasinoAdmin brand">
+    <div class="brand-glow brand-glow-one"></div>
+    <div class="brand-glow brand-glow-two"></div>
+    <div class="brand-grain"></div>
+
+    <svg class="casino-art" viewBox="0 0 720 760" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="wheelGold" x1="182" y1="182" x2="552" y2="552" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#F7E5A8" />
+          <stop offset=".46" stop-color="#C99A3B" />
+          <stop offset="1" stop-color="#76521A" />
+        </linearGradient>
+        <linearGradient id="cardFace" x1="0" y1="0" x2="1" y2="1">
+          <stop stop-color="#FFFDF7" />
+          <stop offset="1" stop-color="#E8E0D0" />
+        </linearGradient>
+        <radialGradient id="wheelCenter" cx="0" cy="0" r="1" gradientTransform="matrix(0 118 -118 0 360 360)" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#12334A" />
+          <stop offset="1" stop-color="#001126" />
+        </radialGradient>
+        <filter id="softShadow" x="40" y="38" width="640" height="670" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+          <feGaussianBlur stdDeviation="22" />
+        </filter>
+      </defs>
+
+      <circle cx="360" cy="360" r="250" fill="#C89835" fill-opacity=".11" filter="url(#softShadow)" />
+      <g opacity=".84" transform="rotate(-13 360 360)">
+        <circle cx="360" cy="360" r="192" fill="#00152B" stroke="url(#wheelGold)" stroke-width="5" />
+        <circle cx="360" cy="360" r="175" stroke="#E2C16E" stroke-opacity=".72" stroke-width="2" />
+        <circle cx="360" cy="360" r="145" stroke="#C99A3B" stroke-opacity=".7" stroke-width="2" />
+        <circle cx="360" cy="360" r="80" fill="url(#wheelCenter)" stroke="#D4AD56" stroke-width="3" />
+        <path d="M360 168v112m0 160v112M168 360h112m160 0h112M224.24 224.24l79.2 79.2m113.12 113.12 79.2 79.2m0-271.28-79.2 79.2M303.44 416.56l-79.2 79.2" stroke="#D3AD5B" stroke-opacity=".68" stroke-width="2" />
+        <path d="M360 215v67m0 156v67M215 360h67m156 0h67M257.5 257.5l47.4 47.4m110.2 110.2 47.4 47.4m0-204.9-47.4 47.4m-110.2 110.2-47.4 47.4" stroke="#E8D7A7" stroke-opacity=".48" stroke-width="1.5" />
+        <circle cx="360" cy="360" r="25" fill="#C99A3B" />
+        <circle cx="360" cy="360" r="11" fill="#F7E5A8" />
+        <path d="m350 272 10-16 10 16h-20Zm0 176 10 16 10-16h-20ZM272 350l-16 10 16 10v-20Zm176 0 16 10-16 10v-20Z" fill="#F1DB9A" />
+        <circle cx="360" cy="190" r="4" fill="#FFF3CC" />
+        <circle cx="530" cy="360" r="4" fill="#FFF3CC" />
+        <circle cx="360" cy="530" r="4" fill="#FFF3CC" />
+        <circle cx="190" cy="360" r="4" fill="#FFF3CC" />
+      </g>
+
+      <g transform="rotate(-12 223 457)" filter="url(#softShadow)" opacity=".38">
+        <rect x="128" y="316" width="184" height="264" rx="18" fill="#000" />
+      </g>
+      <g transform="rotate(-12 223 457)">
+        <rect x="128" y="316" width="184" height="264" rx="18" fill="url(#cardFace)" />
+        <rect x="136" y="324" width="168" height="248" rx="13" stroke="#C9A85C" stroke-opacity=".65" />
+        <text x="151" y="370" fill="#9B272A" font-family="Georgia,serif" font-size="35">A</text>
+        <path d="M168 389c-11-16-29-2 0 20 29-22 11-36 0-20Z" fill="#A62C30" />
+        <path d="M220 403c-21 18-29 38-29 60 0 26 15 44 32 44s32-18 32-44c0-22-9-42-30-60l-2-2-3 2Z" fill="#A62C30" />
+        <path d="M220 407v98m-25-50h50" stroke="#F0D8D0" stroke-opacity=".58" stroke-width="2" />
+        <text x="266" y="552" fill="#9B272A" font-family="Georgia,serif" font-size="35" transform="rotate(180 266 552)">A</text>
+      </g>
+
+      <g transform="rotate(14 516 484)">
+        <ellipse cx="516" cy="510" rx="92" ry="28" fill="#000" fill-opacity=".25" />
+        <path d="M425 450v48c0 19 41 35 91 35s91-16 91-35v-48" fill="#8B6426" stroke="#E5C56F" stroke-width="3" />
+        <ellipse cx="516" cy="450" rx="91" ry="34" fill="#00152B" stroke="#F0D88F" stroke-width="4" />
+        <ellipse cx="516" cy="450" rx="72" ry="25" stroke="#C99A3B" stroke-width="3" stroke-dasharray="5 7" />
+        <ellipse cx="516" cy="450" rx="53" ry="17" fill="#F1E8D1" />
+        <path d="M516 438c-8-12-21-2 0 14 21-16 8-26 0-14Z" fill="#A62C30" />
+        <path d="M432 450h13m142 0h13m-84-31v10m0 42v10" stroke="#FFF0BE" stroke-width="4" stroke-linecap="round" />
+      </g>
+
+      <g fill="#E7C56F">
+        <circle cx="117" cy="236" r="2" /><circle cx="591" cy="249" r="2" />
+        <circle cx="607" cy="585" r="2.5" /><circle cx="123" cy="601" r="2" />
+        <circle cx="470" cy="135" r="1.5" /><circle cx="286" cy="642" r="1.5" />
+      </g>
+    </svg>
+
+    <div class="brand-lockup">
+      <a routerLink="/" class="casino-logo" aria-label="CasinoAdmin home">
+        <span class="casino-logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 52 52" fill="none">
+            <path d="M11 18h30v22H11z" fill="#001126" stroke="currentColor" stroke-width="2" />
+            <path d="M16 18v-4l5 3 5-5 5 5 5-3v4" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            <path d="M18 23v12m8-12v12m8-12v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <path d="M26 27c-4-5-9-1 0 6 9-7 4-11 0-6Z" fill="currentColor" />
+          </svg>
+        </span>
+        <span class="casino-logo-name">Casino<span>Admin</span></span>
+      </a>
+      <p class="brand-tagline">MANAGE <i></i> CONTROL <i></i> GROW</p>
+      <p class="brand-caption">A clearer view of every move.</p>
     </div>
-    <div class="fixed z-50 hidden bottom-6 right-6 sm:block">
-      <app-theme-toggle-two />
-    </div>
+  </aside>
+
+  <div class="auth-theme-toggle">
+    <app-theme-toggle-two />
   </div>
 </div>

@@ -1311,3 +1311,62 @@ pre[class*="language-"].line-numbers {
   direction: ltr !important;
   unicode-bidi: embed;
 }
+
+/* Login-only palette overrides for the shared form controls. */
+.auth-login-label {
+  color: #26384b !important;
+}
+
+.auth-login-submit {
+  border-color: #e9bf3f !important;
+  background-color: #e9bf3f !important;
+  color: #00152b !important;
+  box-shadow: 0 8px 24px rgb(163 123 31 / 18%) !important;
+}
+
+.auth-login-submit:hover:not(:disabled) {
+  border-color: #f5d36a !important;
+  background-color: #f5d36a !important;
+  color: #00152b !important;
+}
+
+.auth-login-submit:focus-visible {
+  outline: 3px solid rgb(233 191 63 / 38%);
+  outline-offset: 3px;
+}
+
+.auth-login-checkbox:checked {
+  border-color: #e9bf3f !important;
+  background-color: #e9bf3f !important;
+}
+
+.auth-theme-toggle app-theme-toggle-two button {
+  border: 1px solid rgb(233 191 63 / 58%);
+  background-color: #e9bf3f;
+  color: #00152b;
+  box-shadow: 0 8px 24px rgb(0 21 43 / 18%);
+}
+
+.auth-theme-toggle app-theme-toggle-two button:hover {
+  background-color: #f5d36a;
+}
+
+.dark .auth-login-label {
+  color: #a9b7c9 !important;
+}
+
+.dark .auth-login-input {
+  border-color: #26384b !important;
+  background-color: #001126 !important;
+  color: #f5f7fa !important;
+}
+
+.dark .auth-login-input::placeholder {
+  color: #a9b7c9 !important;
+  opacity: .68;
+}
+
+.dark .auth-login-input:focus {
+  border-color: #e9bf3f !important;
+  box-shadow: 0 0 0 3px rgb(233 191 63 / 16%) !important;
+}
