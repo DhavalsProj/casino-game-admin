@@ -99,18 +99,30 @@
           <thead class="bg-gray-50 dark:bg-white/[0.02]">
             <tr class="text-gray-500 dark:text-gray-400">
               <th class="px-5 py-3 font-medium">Date</th>
+              @if (targetType === 'agent' && !isUser) {
+                <th class="px-5 py-3 font-medium">User account</th>
+              }
               <th class="px-5 py-3 font-medium">Transaction</th>
               <th class="px-5 py-3 font-medium">Source</th>
               <th class="px-5 py-3 font-medium">Points</th>
               <th class="px-5 py-3 font-medium">Balance before</th>
               <th class="px-5 py-3 font-medium">Balance after</th>
               <th class="px-5 py-3 font-medium">Request</th>
+              <th class="px-5 py-3 font-medium">Status</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
             @for (transaction of pagedTransactions; track transaction.id) {
               <tr class="text-gray-700 dark:text-gray-300">
                 <td class="whitespace-nowrap px-5 py-4">{{ transaction.createdAt | date: 'dd MMM yyyy, h:mm a' }}</td>
+                @if (targetType === 'agent' && !isUser) {
+                  <td class="whitespace-nowrap px-5 py-4">
+                    <span class="font-medium">{{ transaction.user?.name ?? ('User #' + transaction.userId) }}</span>
+                    @if (transaction.user?.uniqueId) {
+                      <span class="ms-1 text-theme-xs text-gray-500 dark:text-gray-400">({{ transaction.user.uniqueId }})</span>
+                    }
+                  </td>
+                }
                 <td class="whitespace-nowrap px-5 py-4">
                   <span class="font-medium" [ngClass]="transaction.type === 'CREDIT' ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'">
                     {{ transaction.type | titlecase }}
@@ -118,9 +130,10 @@
                 </td>
                 <td class="whitespace-nowrap px-5 py-4">{{ formatSource(transaction.source) }}</td>
                 <td class="whitespace-nowrap px-5 py-4 font-medium">{{ transaction.amount }}</td>
-                <td class="whitespace-nowrap px-5 py-4">{{ transaction.balanceBefore }}</td>
-                <td class="whitespace-nowrap px-5 py-4 font-medium">{{ transaction.balanceAfter }}</td>
+                <td class="whitespace-nowrap px-5 py-4">{{ transaction.balanceBefore ?? '?' }}</td>
+                <td class="whitespace-nowrap px-5 py-4 font-medium">{{ transaction.balanceAfter ?? '?' }}</td>
                 <td class="whitespace-nowrap px-5 py-4">{{ transaction.requestId ? '#' + transaction.requestId : '—' }}</td>
+                <td class="whitespace-nowrap px-5 py-4">{{ transaction.status ?? 'COMPLETED' }}</td>
               </tr>
             }
           </tbody>

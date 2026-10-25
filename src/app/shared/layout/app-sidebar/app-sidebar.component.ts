@@ -29,8 +29,8 @@ export class AppSidebarComponent {
   navItems: NavItem[] = [
     {
       name: "Dashboard",
+      path: "/",
       icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
-      subItems: [{ name: "Overview", path: "/", pro: false }],
     },
     {
       name: "Calendar",
@@ -112,6 +112,7 @@ export class AppSidebarComponent {
         dashboard,
         calendar,
         profile,
+        { name: 'Fun Target', path: '/games/fun-target', icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>` },
         {
           name: 'User Profile',
           path: '/user-profile',
@@ -141,6 +142,7 @@ export class AppSidebarComponent {
       return [
         dashboard,
         calendar,
+        { name: 'Fun Target', path: '/games/fun-target', icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>` },
         {
           ...profile,
           path: undefined,
@@ -173,6 +175,12 @@ export class AppSidebarComponent {
       return this.navItems.filter((item) =>
       ['Dashboard', 'My Profile', 'Tables'].includes(item.name),
       );
+    }
+    if (this.authService.role === 'admin') {
+      const [dashboard, calendar, profile, tables] = this.navItems;
+      return [dashboard, calendar, profile, {
+        name: 'Fun Target', path: '/games/fun-target', icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>`,
+      }, tables];
     }
     return this.navItems;
   }

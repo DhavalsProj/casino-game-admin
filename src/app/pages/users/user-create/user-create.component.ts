@@ -223,6 +223,9 @@ export class UserCreateComponent implements OnInit {
   private getErrorMessage(error: unknown, fallback: string): string {
     if (error instanceof HttpErrorResponse) {
       const message = error.error?.message;
+      if (error.status === 409 && typeof message === 'string' && /already registered/i.test(message)) {
+        return 'This mobile number is already registered. Use a different mobile number and try again.';
+      }
       if (Array.isArray(message)) return message.join(' ');
       if (typeof message === 'string' && message.trim()) return message;
     }

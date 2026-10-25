@@ -32,6 +32,24 @@ export interface WalletTransaction {
   createdAt: string;
 }
 
+export interface TransactionHistoryEntry {
+  id: number | string;
+  walletId: number;
+  userId: number;
+  requestId: number | null;
+  type: 'CREDIT' | 'DEBIT' | 'WITHDRAW' | 'ADD_POINTS';
+  source: string;
+  amount: string;
+  balanceBefore: string | null;
+  balanceAfter: string | null;
+  description: string | null;
+  createdAt: string;
+  status?: WalletRequestStatus | 'COMPLETED';
+  recordType?: 'WALLET_TRANSACTION' | 'WALLET_REQUEST';
+  submittedAt?: string;
+  user?: { id: number; name: string; uniqueId: string; type: 'user' | 'agent' };
+}
+
 @Injectable({ providedIn: 'root' })
 export class WalletService {
   private readonly apiUrl = environment.apiUrl;
@@ -88,6 +106,12 @@ export class WalletService {
     return this.http.patch<WalletRequest>(
       `${this.apiUrl}/wallet/requests/${requestId}/reject`,
       {},
+    ).pipe(timeout({ first: 15000 }));
+  }
+
+  getTransactionHistoryForAccount(accountId: number): Observable<TransactionHistoryEntry[]> {
+    return this.http.get<TransactionHistoryEntry[]>(
+      `${this.apiUrl}/transactions/${accountId}`,
     ).pipe(timeout({ first: 15000 }));
   }
 

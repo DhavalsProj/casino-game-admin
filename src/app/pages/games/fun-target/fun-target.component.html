@@ -1,0 +1,112 @@
+<div class="mx-auto max-w-7xl space-y-6">
+  <header class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <p class="text-sm font-medium text-brand-500">GAME OPERATIONS</p>
+      <h1 class="mt-1 text-2xl font-semibold text-gray-900 dark:text-white">Fun Target</h1>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Configure the game, manage rounds and review backend reported activity.</p>
+    </div>
+    <button type="button" (click)="refresh()" [disabled]="loading" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">{{ loading ? 'Loading…' : 'Refresh data' }}</button>
+  </header>
+
+  @if (error) { <div role="alert" class="rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-300">{{ error }}</div> }
+  @if (success) { <div role="status" class="rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-300">{{ success }}</div> }
+
+  <nav class="flex flex-wrap gap-2 border-b border-gray-200 pb-3 dark:border-gray-800" aria-label="Game sections">
+    @for (item of [{id:'configuration',label:'Configuration'},{id:'rounds',label:'Rounds'},{id:'joker',label:'Joker'},{id:'summary',label:'Bet summary'},{id:'wallet',label:'Game wallets'}]; track item.id) {
+      <button type="button" (click)="chooseSection($any(item.id))" [class.bg-brand-500]="section === item.id" [class.text-white]="section === item.id" class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">{{ item.label }}</button>
+    }
+  </nav>
+
+  @if (section === 'configuration') {
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-7">
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div><h2 class="text-lg font-semibold text-gray-900 dark:text-white">Game configuration</h2><p class="text-sm text-gray-500 dark:text-gray-400">Allocation percentages must add up to 100%.</p></div>
+        <span class="rounded-full px-3 py-1 text-xs font-medium" [class.bg-success-50]="config.status === 'ACTIVE'" [class.text-success-700]="config.status === 'ACTIVE'" [class.bg-gray-100]="config.status !== 'ACTIVE'" [class.text-gray-600]="config.status !== 'ACTIVE'">{{ config.status }}</span>
+      </div>
+      @if (loading) { <p class="mb-4 text-sm text-gray-500">Loading configuration…</p> }
+      <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Game name<input [(ngModel)]="config.gameName" class="rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 dark:border-gray-700" /></label>
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Minimum bet per number<input type="number" min="0.01" step="0.01" [(ngModel)]="config.minimumBetPerNumber" class="rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 dark:border-gray-700" /></label>
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Maximum bet per number<input type="number" min="0.01" max="5000" step="0.01" [(ngModel)]="config.maximumBetPerNumber" class="rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 dark:border-gray-700" /></label>
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Result range<input value="1 to 9" readonly class="rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 dark:border-gray-700 dark:bg-white/5" /></label>
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Result mode<select [(ngModel)]="config.resultMode" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900"><option value="MANUAL">Manual</option><option value="RANDOM">Random</option></select></label>
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Admin/system share (%)<input type="number" min="0" max="100" step="0.01" [(ngModel)]="config.adminSharePercentage" class="rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 dark:border-gray-700" /></label>
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Winning allocation (%)<input type="number" min="0" max="100" step="0.01" [(ngModel)]="config.winningAllocationPercentage" class="rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 dark:border-gray-700" /></label>
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Joker multiplier<input type="number" min="1" step="1" [(ngModel)]="config.jokerMultiplier" class="rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 dark:border-gray-700" /></label>
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Joker frequency (rounds)<input type="number" min="1" step="1" [(ngModel)]="config.jokerFrequency" class="rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 dark:border-gray-700" /></label>
+        <label class="grid gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">Game status<select [(ngModel)]="config.status" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></label>
+      </div>
+      <div class="mt-6"><p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Available bet options</p><div class="flex flex-wrap gap-3">@for (option of betOptions; track option) {<label class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm dark:border-gray-700"><input type="checkbox" [checked]="config.availableBetOptions.includes(option)" (change)="toggleBetOption(option, $any($event.target).checked)" />{{ option | number }}</label>}</div></div>
+      <p class="mt-4 text-sm" [class.text-success-600]="sharesTotal === 100" [class.text-error-600]="sharesTotal !== 100">Allocation total: {{ sharesTotal }}% {{ sharesTotal === 100 ? '✓' : '(must equal 100%)' }}</p>
+      <div class="mt-6 flex justify-end"><button type="button" (click)="saveConfiguration()" [disabled]="saving || !canManage || loading" class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{{ saving ? 'Saving…' : 'Save configuration' }}</button></div>
+      @if (!canManage) { <p class="mt-3 text-end text-xs text-gray-500">Configuration changes require an administrator role.</p> }
+    </section>
+  }
+
+  @if (section === 'rounds') {
+    <section class="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-7">
+      <div><h2 class="text-lg font-semibold text-gray-900 dark:text-white">Create or schedule round</h2><p class="text-sm text-gray-500 dark:text-gray-400">The backend schedules a round start time and records opened and closed timestamps.</p></div>
+      <div class="flex flex-wrap items-end gap-3"><label class="grid gap-2 text-sm">Schedule time<input type="datetime-local" [(ngModel)]="roundStart" class="rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 dark:border-gray-700" /></label><button type="button" (click)="createRound()" [disabled]="!canManage || loading" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">Create round</button></div>
+      <div class="overflow-x-auto"><table class="w-full min-w-[950px] text-start text-sm"><thead class="border-b border-gray-200 text-gray-500 dark:border-gray-800"><tr>@for (head of ['Round ID','Number','Status','Total bets','Winning number','Joker','Scheduled','Opened','Closed','Created','Actions']; track head) {<th class="px-3 py-3 text-start font-medium">{{ head }}</th>}</tr></thead><tbody>
+        @for (round of rounds; track round.id) {
+          <tr class="border-b border-gray-100 dark:border-gray-800"><td class="px-3 py-3">{{ round.id }}</td><td class="px-3 py-3">{{ round.roundNumber }}</td><td class="px-3 py-3">{{ round.status }}</td><td class="px-3 py-3">{{ round.totalBetAmount | number }}</td><td class="px-3 py-3">{{ round.winningNumber ?? '—' }}</td><td class="px-3 py-3">{{ round.jokerStatus }}</td><td class="px-3 py-3">{{ round.scheduledAt | date:'short' }}</td><td class="px-3 py-3">{{ round.openedAt ? (round.openedAt | date:'short') : '—' }}</td><td class="px-3 py-3">{{ round.closedAt ? (round.closedAt | date:'short') : '—' }}</td><td class="px-3 py-3">{{ round.createdAt | date:'short' }}</td>
+            <td class="px-3 py-3"><div class="flex flex-wrap gap-2"><button (click)="viewRound(round)" class="text-brand-600">Details</button>
+              @if (round.status === 'UPCOMING') { <button (click)="roundAction(round,'open')" [disabled]="!canManage || !canOpenRound(round)" class="text-success-600">Open betting</button> }
+              @if (round.status === 'OPEN') { <button (click)="roundAction(round,'close')" [disabled]="!canManage" class="text-warning-600">Close</button> }
+              @if (round.status === 'CLOSED') { @if (round.resultMode === 'MANUAL') { <select [(ngModel)]="winningNumber" class="rounded border px-2 py-1 dark:bg-gray-900">@for (number of numbers; track number) { <option [ngValue]="number">{{ number }}</option> }</select> }<button (click)="roundAction(round,'publish')" [disabled]="!canManage" class="text-brand-600">Finalize result</button> }
+            </div></td>
+          </tr>
+        } @empty { <tr><td colspan="11" class="px-3 py-10 text-center text-gray-500">No rounds returned by the game service.</td></tr> }
+      </tbody></table></div>
+    </section>
+  }
+
+  @if (section === 'joker') {
+    <section class="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-7">
+      <div><h2 class="text-lg font-semibold text-gray-900 dark:text-white">Joker controls</h2><p class="text-sm text-gray-500 dark:text-gray-400">Global enablement and frequency are saved in Configuration.</p></div>
+      <label class="inline-flex items-center gap-3 text-sm"><input type="checkbox" [(ngModel)]="config.jokerEnabled" [disabled]="!canManage" />Enable Joker</label>
+      <div class="flex flex-wrap items-end gap-3"><label class="grid gap-2 text-sm">Upcoming round ID<select [(ngModel)]="scheduleRoundNumber" class="rounded-lg border border-gray-300 bg-white px-3 py-2.5 dark:border-gray-700 dark:bg-gray-900"><option value="">Select upcoming round</option>@for (round of rounds; track round.id) { @if (round.status === 'UPCOMING') { <option [value]="round.roundNumber">Round {{ round.roundNumber }} · {{ round.scheduledAt | date:'short' }}</option> } }</select></label><button type="button" (click)="scheduleJoker()" [disabled]="!canManage || !config.jokerEnabled || loading" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">Schedule Joker</button><button type="button" (click)="saveConfiguration()" [disabled]="!canManage || loading" class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm dark:border-gray-700">Save enablement</button></div>
+      <h3 class="font-medium text-gray-800 dark:text-white">Joker rounds</h3>
+      <div class="overflow-x-auto"><table class="w-full min-w-[600px] text-sm"><thead><tr class="border-b text-start text-gray-500"><th class="px-3 py-3 text-start">Round</th><th class="px-3 py-3 text-start">Status</th><th class="px-3 py-3 text-start">Multiplier</th><th class="px-3 py-3 text-start">Scheduled at</th><th class="px-3 py-3 text-start">Action</th></tr></thead><tbody>
+        @for (schedule of schedules; track schedule.id) { <tr class="border-b border-gray-100 dark:border-gray-800"><td class="px-3 py-3">{{ schedule.roundNumber }}</td><td class="px-3 py-3">{{ jokerRoundStatus(schedule) }}</td><td class="px-3 py-3">{{ schedule.multiplier }}×</td><td class="px-3 py-3">{{ jokerScheduledAt(schedule) ? (jokerScheduledAt(schedule) | date:'short') : '—' }}</td><td class="px-3 py-3">@if (jokerRoundStatus(schedule) === 'SCHEDULED') { <button (click)="cancelSchedule(schedule)" [disabled]="!canManage" class="text-error-600">Cancel schedule</button> }</td></tr> }
+        @empty { <tr><td colspan="5" class="px-3 py-8 text-center text-gray-500">No scheduled Joker rounds returned.</td></tr> }
+      </tbody></table></div>
+    </section>
+  }
+
+  @if (section === 'summary') {
+    <section class="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-7">
+      <div><h2 class="text-lg font-semibold text-gray-900 dark:text-white">Bet and result summary</h2><p class="text-sm text-gray-500 dark:text-gray-400">Select Details on a round to retrieve its current server summary.</p></div>
+      @if (selectedRound) { <p class="text-sm text-gray-600 dark:text-gray-300">Round {{ selectedRound.roundNumber }} · {{ selectedRound.status }} · Winning number: {{ selectedRound.winningNumber ?? '—' }}</p> }
+      @if (summary) {
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div class="rounded-xl bg-gray-50 p-4 dark:bg-gray-800"><p class="text-xs text-gray-500">Total amount bet</p><p class="mt-2 text-xl font-semibold">{{ summary.totalBetAmount | number }}</p></div>
+          <div class="rounded-xl bg-gray-50 p-4 dark:bg-gray-800"><p class="text-xs text-gray-500">Configured winning allocation</p><p class="mt-2 text-xl font-semibold">{{ config.winningAllocationPercentage }}%</p></div>
+          <div class="rounded-xl bg-gray-50 p-4 dark:bg-gray-800"><p class="text-xs text-gray-500">Allocation reporting amount</p><p class="mt-2 text-xl font-semibold">{{ summary.winningAllocationReporting | number }}</p></div>
+          <div class="rounded-xl bg-gray-50 p-4 dark:bg-gray-800"><p class="text-xs text-gray-500">Joker</p><p class="mt-2 text-xl font-semibold">{{ summary.jokerActive ? summary.jokerMultiplier + '× active' : 'Not active' }}</p></div>
+        </div>
+        <p class="rounded-lg bg-warning-50 p-3 text-sm text-warning-700 dark:bg-warning-500/10 dark:text-warning-300">Payout estimate unavailable. {{ summary.payoutNote }}</p>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">@for (item of summary.numbers; track item.number) { <article class="rounded-xl border border-gray-200 p-4 dark:border-gray-800"><p class="text-sm text-gray-500">Number {{ item.number }}</p><p class="mt-2 text-lg font-semibold">{{ item.totalAmount | number }} points</p><p class="text-xs text-gray-500">{{ item.totalBets }} bets · payout estimate unavailable</p></article> }</div>
+      } @else if (!selectedRound) { <p class="rounded-lg bg-gray-50 p-8 text-center text-sm text-gray-500 dark:bg-gray-800">Choose a round from the Rounds tab to view its server provided summary.</p> }
+      @else if (loading) { <p class="text-sm text-gray-500">Loading summary…</p> }
+      @else { <p class="rounded-lg bg-gray-50 p-8 text-center text-sm text-gray-500 dark:bg-gray-800">Summary is not available yet.</p> }
+    </section>
+  }
+
+  @if (section === 'wallet') {
+    <section class="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-7">
+      <div><h2 class="text-lg font-semibold text-gray-900 dark:text-white">Game wallet lookup</h2><p class="text-sm text-gray-500 dark:text-gray-400">Balances, pending requests and transactions come from existing wallet APIs.</p></div>
+      <div class="flex flex-wrap gap-3"><input aria-label="User ID" type="number" min="1" [(ngModel)]="walletUserId" placeholder="User ID" class="rounded-lg border border-gray-300 bg-transparent px-3 py-2.5 dark:border-gray-700" /><button type="button" (click)="loadWallet()" [disabled]="loading" class="rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white">Load wallet</button></div>
+      @if (wallet) {
+        <p class="text-sm text-gray-600 dark:text-gray-300">{{ wallet.userName }} · {{ wallet.uniqueId }} (ID {{ wallet.userId }})</p>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div class="rounded-xl bg-gray-50 p-4 dark:bg-gray-800"><p class="text-xs text-gray-500">Main wallet</p><p class="mt-2 text-xl font-semibold">{{ wallet.mainBalance === null ? 'Unavailable' : (wallet.mainBalance | number) }}</p></div>
+          <div class="rounded-xl bg-gray-50 p-4 dark:bg-gray-800"><p class="text-xs text-gray-500">Temporary winning wallet</p><p class="mt-2 text-xl font-semibold">Not supported by current API</p></div>
+          <div class="rounded-xl bg-gray-50 p-4 dark:bg-gray-800"><p class="text-xs text-gray-500">Bet blocking status</p><p class="mt-2 text-xl font-semibold">Not supported by current API</p></div>
+        </div>
+        <div><h3 class="mb-2 font-medium text-gray-800 dark:text-white">Pending wallet requests</h3><div class="overflow-x-auto"><table class="w-full min-w-[600px] text-sm"><thead><tr class="border-b text-gray-500"><th class="px-3 py-3 text-start">Request</th><th class="px-3 py-3 text-start">Type</th><th class="px-3 py-3 text-start">Amount</th><th class="px-3 py-3 text-start">Status</th><th class="px-3 py-3 text-start">Created</th></tr></thead><tbody>@for (request of wallet.pendingRequests; track request.id) { <tr class="border-b border-gray-100 dark:border-gray-800"><td class="px-3 py-3">{{ request.id }}</td><td class="px-3 py-3">{{ request.type }}</td><td class="px-3 py-3">{{ request.amount | number }}</td><td class="px-3 py-3">{{ request.status }}</td><td class="px-3 py-3">{{ request.createdAt | date:'short' }}</td></tr> } @empty { <tr><td colspan="5" class="px-3 py-8 text-center text-gray-500">No pending requests returned.</td></tr> }</tbody></table></div></div>
+        <div><h3 class="mb-2 font-medium text-gray-800 dark:text-white">Transaction history</h3><div class="overflow-x-auto"><table class="w-full min-w-[650px] text-sm"><thead><tr class="border-b text-gray-500"><th class="px-3 py-3 text-start">Type</th><th class="px-3 py-3 text-start">Source</th><th class="px-3 py-3 text-start">Amount</th><th class="px-3 py-3 text-start">Details</th><th class="px-3 py-3 text-start">Timestamp</th></tr></thead><tbody>@for (transaction of wallet.transactions; track transaction.id) { <tr class="border-b border-gray-100 dark:border-gray-800"><td class="px-3 py-3">{{ transaction.type }}</td><td class="px-3 py-3">{{ transaction.source }}</td><td class="px-3 py-3">{{ transaction.amount | number }}</td><td class="px-3 py-3">{{ transaction.description ?? '—' }}</td><td class="px-3 py-3">{{ transaction.createdAt | date:'short' }}</td></tr> } @empty { <tr><td colspan="5" class="px-3 py-8 text-center text-gray-500">No transactions returned.</td></tr> }</tbody></table></div></div>
+      }
+    </section>
+  }
+</div>

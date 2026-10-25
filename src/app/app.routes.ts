@@ -22,6 +22,7 @@ import { WalletManagementComponent } from './pages/wallet/wallet-management/wall
 import { WalletTransferListComponent } from './pages/wallet/wallet-transfer-list/wallet-transfer-list.component';
 import { TransactionHistoryComponent } from './pages/transactions/transaction-history/transaction-history.component';
 import { authGuard } from './shared/guards/auth.guard';
+import { FunTargetComponent } from './pages/games/fun-target/fun-target.component';
 
 export const routes: Routes = [
   {
@@ -36,7 +37,7 @@ export const routes: Routes = [
         component: EcommerceComponent,
         pathMatch: 'full',
         data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'CasinoAdmin',
+        title: 'Dashboard | CasinoAdmin',
       },
       {
         path:'calendar',
@@ -168,6 +169,12 @@ export const routes: Routes = [
         canActivate: [authGuard],
         data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
         title: 'CasinoAdmin',
+      },
+      {
+        path: 'games/fun-target',
+        component: FunTargetComponent,
+        data: { roles: ['superadmin', 'admin'] },
+        title: 'Fun Target Game',
       },
       {
         path:'basic-tables',

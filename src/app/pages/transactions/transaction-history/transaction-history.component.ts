@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { forkJoin, of, Subscription, TimeoutError } from 'rxjs';
 import { AuthService } from '../../../shared/services/auth.service';
 import { ManagedUser, UserService } from '../../../shared/services/user.service';
-import { WalletService, WalletTransaction } from '../../../shared/services/wallet.service';
+import { WalletService, TransactionHistoryEntry } from '../../../shared/services/wallet.service';
 
 type TransactionTargetType = 'user' | 'agent';
 
@@ -19,7 +19,7 @@ type TransactionTargetType = 'user' | 'agent';
 export class TransactionHistoryComponent implements OnInit, OnDestroy {
   users: ManagedUser[] = [];
   agents: ManagedUser[] = [];
-  transactions: WalletTransaction[] = [];
+  transactions: TransactionHistoryEntry[] = [];
   readonly pageSize = 10;
   currentPage = 1;
   targetType: TransactionTargetType = 'user';
@@ -75,7 +75,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     return this.router.url.split('?')[0] === '/transactions/grid';
   }
 
-  get filteredTransactions(): WalletTransaction[] {
+  get filteredTransactions(): TransactionHistoryEntry[] {
     if (!this.isManagementPage && !this.isGridPage) {
       return this.transactions;
     }
@@ -89,16 +89,19 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
         transaction.type,
         transaction.source,
         transaction.amount,
-        transaction.balanceBefore,
-        transaction.balanceAfter,
+        transaction.balanceBefore ?? '',
+        transaction.balanceAfter ?? '',
         transaction.description ?? '',
         String(transaction.requestId ?? ''),
+        transaction.status ?? '',
+        transaction.user?.name ?? '',
+        transaction.user?.uniqueId ?? '',
       ].some((value) => value.toLowerCase().includes(query));
       return matchesType && matchesSearch;
     });
   }
 
-  get pagedTransactions(): WalletTransaction[] {
+  get pagedTransactions(): TransactionHistoryEntry[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredTransactions.slice(start, start + this.pageSize);
   }
@@ -214,7 +217,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
   private loadTransactions(userId: number): void {
     this.isLoadingTransactions = true;
     this.errorMessage = '';
-    this.subscriptions.add(this.walletService.getTransactionsForUser(userId).subscribe({
+    this.subscriptions.add(this.walletService.getTransactionHistoryForAccount(userId).subscribe({
       next: (transactions) => {
         this.transactions = transactions;
         this.currentPage = 1;
