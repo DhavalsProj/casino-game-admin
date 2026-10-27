@@ -113,6 +113,7 @@ export class AppSidebarComponent {
         calendar,
         profile,
         { name: 'Fun Target', path: '/games/fun-target', icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>` },
+        { name: 'API Logs', path: '/admin/api-logs', icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5h16M4 12h16M4 19h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="18" cy="19" r="2" stroke="currentColor" stroke-width="1.5"/></svg>` },
         {
           name: 'User Profile',
           path: '/user-profile',
@@ -142,7 +143,6 @@ export class AppSidebarComponent {
       return [
         dashboard,
         calendar,
-        { name: 'Fun Target', path: '/games/fun-target', icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>` },
         {
           ...profile,
           path: undefined,
@@ -179,7 +179,7 @@ export class AppSidebarComponent {
     if (this.authService.role === 'admin') {
       const [dashboard, calendar, profile, tables] = this.navItems;
       return [dashboard, calendar, profile, {
-        name: 'Fun Target', path: '/games/fun-target', icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>`,
+        name: 'API Logs', path: '/admin/api-logs', icon: `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 5h16M4 12h16M4 19h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="18" cy="19" r="2" stroke="currentColor" stroke-width="1.5"/></svg>`,
       }, tables];
     }
     return this.navItems;

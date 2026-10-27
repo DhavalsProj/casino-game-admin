@@ -9,6 +9,7 @@ export interface UserCreationFeedback {
 @Injectable({ providedIn: 'root' })
 export class UserFeedbackService {
   private creationFeedback: UserCreationFeedback | null = null;
+  private profileUpdated = false;
 
   setCreationFeedback(feedback: UserCreationFeedback): void {
     this.creationFeedback = feedback;
@@ -18,5 +19,15 @@ export class UserFeedbackService {
     const feedback = this.creationFeedback;
     this.creationFeedback = null;
     return feedback;
+  }
+
+  setProfileUpdateFeedback(): void {
+    this.profileUpdated = true;
+  }
+
+  consumeProfileUpdateFeedback(): boolean {
+    const updated = this.profileUpdated;
+    this.profileUpdated = false;
+    return updated;
   }
 }

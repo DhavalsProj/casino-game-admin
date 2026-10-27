@@ -36,7 +36,7 @@ export class UserCreateComponent implements OnInit {
   ) {
     this.userForm = this.formBuilder.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(80)]],
-      mobile: ['', [Validators.required, Validators.pattern(/^[0-9]{10,15}$/)]],
+      mobile: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
       type: ['user' as ManagedUserType, Validators.required],
       agentId: ['', Validators.required],
     });
@@ -51,7 +51,7 @@ export class UserCreateComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.isProfileEdit = this.route.snapshot.routeConfig?.path === 'profile/edit';
+    this.isProfileEdit = this.route.snapshot.data['profileEdit'] === true;
     if (this.isProfileEdit) {
       const currentUser = this.authService.currentUser;
       if (!currentUser) {
@@ -61,23 +61,9 @@ export class UserCreateComponent implements OnInit {
       this.editUserId = currentUser.id;
       this.userForm.get('agentId')?.clearValidators();
       this.userForm.get('agentId')?.updateValueAndValidity({ emitEvent: false });
-      this.isLoadingUser = true;
-      this.userService.getUserById(currentUser.id).subscribe({
-        next: (user) => {
-          this.editingUser = user;
-          this.patchUserForm(user);
-          this.isLoadingUser = false;
-        },
-        error: (error: unknown) => {
-          this.errorMessage = error instanceof TimeoutError
-            ? 'Loading your profile took longer than 15 seconds. Check the user service and try again.'
-            : error instanceof Error
-              ? error.message
-              : 'Unable to load your profile.';
-          this.isLoadingUser = false;
-          this.userLoadFailed = true;
-        },
-      });
+      // The authenticated session already contains these fields. Avoid a detail
+      // request here so profile editing does not depend on /users/get-by-id.
+      this.userForm.patchValue({ name: currentUser.name, mobile: currentUser.mobile });
       return;
     }
 
@@ -118,19 +104,17 @@ export class UserCreateComponent implements OnInit {
         this.patchUserForm(previewUser);
       }
       this.isLoadingUser = true;
-      this.userService.getUserById(id).subscribe({
+      this.userService.getUserById(id).pipe(
+        finalize(() => this.isLoadingUser = false),
+      ).subscribe({
         next: (user) => {
           this.editingUser = user;
           this.patchUserForm(user);
-          this.isLoadingUser = false;
         },
         error: (error: unknown) => {
           this.errorMessage = error instanceof TimeoutError
             ? 'Loading this user took longer than 15 seconds. Check the user service and try again.'
-            : error instanceof Error
-              ? error.message
-              : 'Unable to load this user.';
-          this.isLoadingUser = false;
+            : this.getErrorMessage(error, 'Unable to load this user.');
           this.userLoadFailed = true;
         },
       });
@@ -159,19 +143,39 @@ export class UserCreateComponent implements OnInit {
     this.errorMessage = '';
     const rawValue = this.userForm.getRawValue();
     if (this.editUserId !== null) {
+      const currentUser = this.authService.currentUser;
+      if (this.isProfileEdit && (!currentUser || this.editUserId !== currentUser.id)) {
+        this.isLoading = false;
+        this.errorMessage = 'Your profile could not be verified. Reload the page and try again.';
+        return;
+      }
+      if (this.isProfileEdit) {
+        const changes = {
+          name: (rawValue.name ?? '').trim(),
+          mobile: rawValue.mobile ?? '',
+        };
+        this.userService.updateOwnProfile(this.editUserId, changes).pipe(
+          finalize(() => this.isLoading = false),
+        ).subscribe({
+          next: () => {
+            this.authService.updateCurrentUserProfile({ id: this.editUserId!, ...changes });
+            this.userFeedbackService.setProfileUpdateFeedback();
+            void this.router.navigate(['/profile']);
+          },
+          error: (error: unknown) => this.errorMessage = error instanceof TimeoutError
+            ? 'The server took too long to respond. Please try again.'
+            : this.getErrorMessage(error, 'Unable to update your profile.'),
+        });
+        return;
+      }
       this.userService.updateUser(this.editUserId, {
-        name: rawValue.name ?? '',
+        name: (rawValue.name ?? '').trim(),
         mobile: rawValue.mobile ?? '',
         ...(this.isAdmin && this.editingUser?.type === 'user'
           ? { agentId: rawValue.agentId || null }
           : {}),
       }).pipe(finalize(() => this.isLoading = false)).subscribe({
-        next: (updatedUser) => {
-          if (this.isProfileEdit) {
-            this.authService.updateCurrentUserProfile(updatedUser);
-            void this.router.navigate(['/profile']);
-            return;
-          }
+        next: () => {
           void this.router.navigate(['/users'], { state: { successMessage: 'User updated successfully.' } });
         },
         error: (error: unknown) => this.errorMessage = this.getErrorMessage(error, 'Unable to update this user.'),
@@ -222,6 +226,10 @@ export class UserCreateComponent implements OnInit {
 
   private getErrorMessage(error: unknown, fallback: string): string {
     if (error instanceof HttpErrorResponse) {
+      if (error.status === 0) return 'Could not reach the user service. Check that the backend is running and try again.';
+      if (error.status === 401) return 'Your session expired. Sign in again.';
+      if (error.status === 403) return 'Your account is not authorized to update this profile.';
+      if (error.status === 404) return 'The profile could not be found. Refresh the page and try again.';
       const message = error.error?.message;
       if (error.status === 409 && typeof message === 'string' && /already registered/i.test(message)) {
         return 'This mobile number is already registered. Use a different mobile number and try again.';

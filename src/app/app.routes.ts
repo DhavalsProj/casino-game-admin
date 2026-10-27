@@ -1,259 +1,350 @@
-import { Routes } from '@angular/router';
-import { EcommerceComponent } from './pages/dashboard/ecommerce/ecommerce.component';
-import { ProfileComponent } from './pages/profile/profile.component';
-import { BasicTablesComponent } from './pages/tables/basic-tables/basic-tables.component';
-import { NotFoundComponent } from './pages/other-page/not-found/not-found.component';
-import { AppLayoutComponent } from './shared/layout/app-layout/app-layout.component';
-import { InvoicesComponent } from './pages/invoices/invoices.component';
-import { LineChartComponent } from './pages/charts/line-chart/line-chart.component';
-import { BarChartComponent } from './pages/charts/bar-chart/bar-chart.component';
-import { AlertsComponent } from './pages/ui-elements/alerts/alerts.component';
-import { AvatarElementComponent } from './pages/ui-elements/avatar-element/avatar-element.component';
-import { BadgesComponent } from './pages/ui-elements/badges/badges.component';
-import { ButtonsComponent } from './pages/ui-elements/buttons/buttons.component';
-import { ImagesComponent } from './pages/ui-elements/images/images.component';
-import { VideosComponent } from './pages/ui-elements/videos/videos.component';
-import { SignInComponent } from './pages/auth-pages/sign-in/sign-in.component';
-import { SignUpComponent } from './pages/auth-pages/sign-up/sign-up.component';
-import { CalenderComponent } from './pages/calender/calender.component';
-import { UserManagementComponent } from './pages/users/user-management/user-management.component';
-import { UserCreateComponent } from './pages/users/user-create/user-create.component';
-import { WalletManagementComponent } from './pages/wallet/wallet-management/wallet-management.component';
-import { WalletTransferListComponent } from './pages/wallet/wallet-transfer-list/wallet-transfer-list.component';
-import { TransactionHistoryComponent } from './pages/transactions/transaction-history/transaction-history.component';
-import { authGuard } from './shared/guards/auth.guard';
-import { FunTargetComponent } from './pages/games/fun-target/fun-target.component';
+import { Routes } from "@angular/router";
+import { AppLayoutComponent } from "./shared/layout/app-layout/app-layout.component";
+import { authGuard } from "./shared/guards/auth.guard";
 
 export const routes: Routes = [
   {
-    path:'',
-    component:AppLayoutComponent,
+    path: "",
+    component: AppLayoutComponent,
     canActivate: [authGuard],
     canActivateChild: [authGuard],
-    data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-    children:[
+    data: { roles: ["superadmin", "admin", "agent", "user"] },
+    children: [
       {
-        path: '',
-        component: EcommerceComponent,
-        pathMatch: 'full',
-        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'Dashboard | CasinoAdmin',
+        path: "",
+        loadComponent: () =>
+          import("./pages/dashboard/ecommerce/ecommerce.component").then(
+            (m) => m.EcommerceComponent,
+          ),
+        pathMatch: "full",
+        data: { roles: ["superadmin", "admin", "agent", "user"] },
+        title: "Dashboard | CasinoAdmin",
       },
       {
-        path:'calendar',
-        component:CalenderComponent,
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        path: "calendar",
+        loadComponent: () =>
+          import("./pages/calender/calender.component").then(
+            (m) => m.CalenderComponent,
+          ),
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'profile',
-        component:ProfileComponent,
-        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'CasinoAdmin'
+        path: "profile",
+        loadComponent: () =>
+          import("./pages/profile/profile.component").then(
+            (m) => m.ProfileComponent,
+          ),
+        data: { roles: ["superadmin", "admin", "agent", "user"] },
+        title: "CasinoAdmin",
       },
       {
-        path: 'profile/edit',
-        component: UserCreateComponent,
+        path: "profile/edit",
+        loadComponent: () =>
+          import("./pages/users/user-create/user-create.component").then(
+            (m) => m.UserCreateComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent", "user"], profileEdit: true },
+        title: "CasinoAdmin",
       },
       {
-        path:'users',
-        component:UserManagementComponent,
+        path: "users",
+        loadComponent: () =>
+          import("./pages/users/user-management/user-management.component").then(
+            (m) => m.UserManagementComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'users/grid',
-        component:UserManagementComponent,
+        path: "users/grid",
+        loadComponent: () =>
+          import("./pages/users/user-management/user-management.component").then(
+            (m) => m.UserManagementComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'user-profile',
-        component:UserManagementComponent,
+        path: "user-profile",
+        loadComponent: () =>
+          import("./pages/users/user-management/user-management.component").then(
+            (m) => m.UserManagementComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'wallet-transfer/manage',
-        component:WalletTransferListComponent,
+        path: "wallet-transfer/manage",
+        loadComponent: () =>
+          import("./pages/wallet/wallet-transfer-list/wallet-transfer-list.component").then(
+            (m) => m.WalletTransferListComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'wallet-transfer/grid',
-        component:WalletTransferListComponent,
+        path: "wallet-transfer/grid",
+        loadComponent: () =>
+          import("./pages/wallet/wallet-transfer-list/wallet-transfer-list.component").then(
+            (m) => m.WalletTransferListComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'users/create',
-        component:UserCreateComponent,
+        path: "users/create",
+        loadComponent: () =>
+          import("./pages/users/user-create/user-create.component").then(
+            (m) => m.UserCreateComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'user-profile/create',
-        component:UserCreateComponent,
+        path: "user-profile/create",
+        loadComponent: () =>
+          import("./pages/users/user-create/user-create.component").then(
+            (m) => m.UserCreateComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'users/edit/:id',
-        component:UserCreateComponent,
+        path: "users/edit/:id",
+        loadComponent: () =>
+          import("./pages/users/user-create/user-create.component").then(
+            (m) => m.UserCreateComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'user-profile/edit/:id',
-        component:UserCreateComponent,
+        path: "user-profile/edit/:id",
+        loadComponent: () =>
+          import("./pages/users/user-create/user-create.component").then(
+            (m) => m.UserCreateComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'wallet-transfer/create',
-        component:WalletManagementComponent,
+        path: "wallet-transfer/create",
+        loadComponent: () =>
+          import("./pages/wallet/wallet-management/wallet-management.component").then(
+            (m) => m.WalletManagementComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'wallet-transfer/edit/:id',
-        component:WalletManagementComponent,
+        path: "wallet-transfer/edit/:id",
+        loadComponent: () =>
+          import("./pages/wallet/wallet-management/wallet-management.component").then(
+            (m) => m.WalletManagementComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent", "user"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'wallet-transfer',
-        component:WalletTransferListComponent,
+        path: "wallet-transfer",
+        loadComponent: () =>
+          import("./pages/wallet/wallet-transfer-list/wallet-transfer-list.component").then(
+            (m) => m.WalletTransferListComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'CasinoAdmin'
+        data: { roles: ["superadmin", "admin", "agent", "user"] },
+        title: "CasinoAdmin",
       },
       {
-        path: 'wallet',
-        component: WalletManagementComponent,
+        path: "wallet",
+        loadComponent: () =>
+          import("./pages/wallet/wallet-management/wallet-management.component").then(
+            (m) => m.WalletManagementComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'CasinoAdmin',
+        data: { roles: ["superadmin", "admin", "agent", "user"] },
+        title: "CasinoAdmin",
       },
       {
-        path: 'transactions/manage',
-        component: TransactionHistoryComponent,
+        path: "transactions/manage",
+        loadComponent: () =>
+          import("./pages/transactions/transaction-history/transaction-history.component").then(
+            (m) => m.TransactionHistoryComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin',
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path: 'transactions/grid',
-        component: TransactionHistoryComponent,
+        path: "transactions/grid",
+        loadComponent: () =>
+          import("./pages/transactions/transaction-history/transaction-history.component").then(
+            (m) => m.TransactionHistoryComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent'] },
-        title: 'CasinoAdmin',
+        data: { roles: ["superadmin", "admin", "agent"] },
+        title: "CasinoAdmin",
       },
       {
-        path: 'transactions',
-        component: TransactionHistoryComponent,
+        path: "transactions",
+        loadComponent: () =>
+          import("./pages/transactions/transaction-history/transaction-history.component").then(
+            (m) => m.TransactionHistoryComponent,
+          ),
         canActivate: [authGuard],
-        data: { roles: ['superadmin', 'admin', 'agent', 'user'] },
-        title: 'CasinoAdmin',
+        data: { roles: ["superadmin", "admin", "agent", "user"] },
+        title: "CasinoAdmin",
       },
       {
-        path: 'games/fun-target',
-        component: FunTargetComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'Fun Target Game',
+        path: "games/fun-target",
+        loadComponent: () =>
+          import("./pages/games/fun-target/fun-target.component").then(
+            (m) => m.FunTargetComponent,
+          ),
+        canActivate: [authGuard],
+        data: { roles: ["superadmin"] },
+        title: "Fun Target Game",
       },
       {
-        path:'basic-tables',
-        component:BasicTablesComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "admin/api-logs",
+        loadComponent: () =>
+          import("./pages/admin/api-logs/api-logs.component").then(
+            (m) => m.ApiLogsComponent,
+          ),
+        canActivate: [authGuard],
+        data: { roles: ["superadmin", "admin"] },
+        title: "API Logs | CasinoAdmin",
+      },
+      {
+        path: "basic-tables",
+        loadComponent: () =>
+          import("./pages/tables/basic-tables/basic-tables.component").then(
+            (m) => m.BasicTablesComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
       // support tickets
       {
-        path:'invoice',
-        component:InvoicesComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "invoice",
+        loadComponent: () =>
+          import("./pages/invoices/invoices.component").then(
+            (m) => m.InvoicesComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'line-chart',
-        component:LineChartComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "line-chart",
+        loadComponent: () =>
+          import("./pages/charts/line-chart/line-chart.component").then(
+            (m) => m.LineChartComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'bar-chart',
-        component:BarChartComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "bar-chart",
+        loadComponent: () =>
+          import("./pages/charts/bar-chart/bar-chart.component").then(
+            (m) => m.BarChartComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'alerts',
-        component:AlertsComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "alerts",
+        loadComponent: () =>
+          import("./pages/ui-elements/alerts/alerts.component").then(
+            (m) => m.AlertsComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'avatars',
-        component:AvatarElementComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "avatars",
+        loadComponent: () =>
+          import("./pages/ui-elements/avatar-element/avatar-element.component").then(
+            (m) => m.AvatarElementComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'badge',
-        component:BadgesComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "badge",
+        loadComponent: () =>
+          import("./pages/ui-elements/badges/badges.component").then(
+            (m) => m.BadgesComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'buttons',
-        component:ButtonsComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "buttons",
+        loadComponent: () =>
+          import("./pages/ui-elements/buttons/buttons.component").then(
+            (m) => m.ButtonsComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'images',
-        component:ImagesComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "images",
+        loadComponent: () =>
+          import("./pages/ui-elements/images/images.component").then(
+            (m) => m.ImagesComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
       {
-        path:'videos',
-        component:VideosComponent,
-        data: { roles: ['superadmin', 'admin'] },
-        title: 'CasinoAdmin'
+        path: "videos",
+        loadComponent: () =>
+          import("./pages/ui-elements/videos/videos.component").then(
+            (m) => m.VideosComponent,
+          ),
+        data: { roles: ["superadmin", "admin"] },
+        title: "CasinoAdmin",
       },
-    ]
+    ],
   },
   // auth pages
   {
-    path:'signin',
-    component:SignInComponent,
-    title: 'CasinoAdmin'
+    path: "signin",
+    loadComponent: () =>
+      import("./pages/auth-pages/sign-in/sign-in.component").then(
+        (m) => m.SignInComponent,
+      ),
+    title: "CasinoAdmin",
   },
   {
-    path:'signup',
-    component:SignUpComponent,
-    title: 'CasinoAdmin'
+    path: "signup",
+    loadComponent: () =>
+      import("./pages/auth-pages/sign-up/sign-up.component").then(
+        (m) => m.SignUpComponent,
+      ),
+    title: "CasinoAdmin",
   },
   // error pages
   {
-    path:'**',
-    component:NotFoundComponent,
-    title: 'CasinoAdmin'
+    path: "**",
+    loadComponent: () =>
+      import("./pages/other-page/not-found/not-found.component").then(
+        (m) => m.NotFoundComponent,
+      ),
+    title: "CasinoAdmin",
   },
 ];

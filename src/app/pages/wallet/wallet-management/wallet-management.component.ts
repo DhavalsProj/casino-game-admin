@@ -6,7 +6,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { forkJoin, of, Subscription, TimeoutError } from 'rxjs';
 import { AuthService } from '../../../shared/services/auth.service';
 import { ManagedUser, UserService } from '../../../shared/services/user.service';
-import { WalletRequest, WalletRequestType, WalletService } from '../../../shared/services/wallet.service';
+import { WalletBalanceSummary, WalletRequest, WalletRequestType, WalletService } from '../../../shared/services/wallet.service';
 
 type RequestAction = 'approve' | 'decline';
 
@@ -20,6 +20,7 @@ export class WalletManagementComponent implements OnInit, OnDestroy {
   users: ManagedUser[] = [];
   agents: ManagedUser[] = [];
   requests: WalletRequest[] = [];
+  walletBalance: WalletBalanceSummary | null = null;
   readonly pageSize = 10;
   currentPage = 1;
   readonly targetType = 'user';
@@ -31,6 +32,8 @@ export class WalletManagementComponent implements OnInit, OnDestroy {
   isLoadingEditRequest = false;
   isLoadingTargets = false;
   isLoadingRequests = false;
+  isLoadingWalletBalance = false;
+  isTransferringWinnings = false;
   isSubmitting = false;
   processingRequestId: number | null = null;
   errorMessage = '';
@@ -60,6 +63,7 @@ export class WalletManagementComponent implements OnInit, OnDestroy {
 
     if (this.authService.role === 'user') {
       this.loadRequests(currentUser.id);
+      this.loadWalletBalance(currentUser.id);
       return;
     }
 
@@ -242,7 +246,46 @@ export class WalletManagementComponent implements OnInit, OnDestroy {
       : this.selectedTarget?.id;
     if (userId) {
       this.loadRequests(userId);
+      if (this.isUser) this.loadWalletBalance(userId);
     }
+  }
+
+  transferWinnings(): void {
+    const userId = this.authService.currentUser?.id;
+    if (!this.isUser || !userId || this.isTransferringWinnings || !this.walletBalance?.blockedFromBetting) return;
+    if (!window.confirm('Transfer all temporary winnings to your main wallet?')) return;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.isTransferringWinnings = true;
+    this.subscriptions.add(this.walletService.transferTemporaryWinnings(userId).subscribe({
+      next: (wallet) => {
+        this.walletBalance = wallet;
+        this.isTransferringWinnings = false;
+        this.successMessage = 'Temporary winnings transferred to your main wallet.';
+        this.changeDetector.detectChanges();
+      },
+      error: (error: unknown) => {
+        this.errorMessage = this.getErrorMessage(error, 'Unable to transfer temporary winnings.');
+        this.isTransferringWinnings = false;
+        this.changeDetector.detectChanges();
+      },
+    }));
+  }
+
+  private loadWalletBalance(userId: number): void {
+    this.isLoadingWalletBalance = true;
+    this.subscriptions.add(this.walletService.getBalanceSummary(userId).subscribe({
+      next: (wallet) => {
+        this.walletBalance = wallet;
+        this.isLoadingWalletBalance = false;
+        this.changeDetector.detectChanges();
+      },
+      error: (error: unknown) => {
+        this.errorMessage = this.getErrorMessage(error, 'Unable to load wallet balances.');
+        this.isLoadingWalletBalance = false;
+        this.changeDetector.detectChanges();
+      },
+    }));
   }
 
   private loadTargets(): void {

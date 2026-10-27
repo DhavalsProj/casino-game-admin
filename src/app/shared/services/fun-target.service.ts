@@ -22,14 +22,14 @@ export interface NumberBetSummary { number: number; totalBets: number; totalAmou
 export interface RoundSummary {
   roundId: string; totalBetAmount: number; winningNumber: number | null; winningAllocationPercentage: number;
   adminReportingShare: number; winningAllocationReporting: number; jokerMultiplier: number; jokerActive: boolean;
-  estimatedWinningPayout: number | null; payoutNote: string; numbers: NumberBetSummary[];
+  estimatedWinningPayout: number; payoutIsEstimate: boolean; payoutNote: string; numbers: NumberBetSummary[];
 }
 export interface JokerSchedule { id: string; roundId: string; roundNumber: number; multiplier: number; status: JokerScheduleStatus; scheduledAt: string; }
 export interface UserGameWallet {
   userId: number; userName: string; uniqueId: string; mainBalance: number | null;
   temporaryWinningBalance: number | null; blockedFromBetting: boolean | null;
   pendingRequests: { id: number; type: string; amount: number; status: string; createdAt: string }[];
-  transactions: { id: number; type: string; source: string; amount: number; createdAt: string; description: string | null }[];
+  transactions: { id: number; type: string; source: string; balanceBucket: 'MAIN' | 'TEMPORARY_WINNING'; amount: number; createdAt: string; description: string | null }[];
 }
 interface ApiConfiguration {
   id: number; gameName: string; minBet: string | number; maxBet: string | number; denominations: number[];
@@ -37,16 +37,17 @@ interface ApiConfiguration {
   adminSharePercent: string | number; winningAllocationPercent: string | number; active: boolean;
 }
 interface ApiRound {
-  id: number; status: RoundStatus; scheduledAt: string; openedAt: string | null; closedAt: string | null;
+  id: number; roundNumber: number; status: RoundStatus; scheduledAt: string; openedAt: string | null; closedAt: string | null;
   resultMode: ResultMode; jokerEnabled: boolean; jokerMultiplier: number; winningNumber: number | null; createdAt: string;
 }
 interface ApiRoundPage { data: ApiRound[]; total: number; page: number; limit: number; }
 interface ApiRoundSummary {
   perNumber: { number: number; total: string | number; bets: number }[]; total: string | number;
+  winningNumber: number | null; winningAllocationPercentage: number;
   adminReportingShare: string | number; winningAllocationReporting: string | number; payout: number | null;
-  payoutNote: string; joker: { enabled: boolean; multiplier: number };
+  payoutIsEstimate: boolean; payoutNote: string; joker: { enabled: boolean; multiplier: number };
 }
-interface ApiJokerSchedule { id: number; roundId: number; multiplier: number; active: boolean; createdAt: string; }
+interface ApiJokerSchedule { id: number; roundId: number; roundNumber: number; scheduledAt: string; multiplier: number; active: boolean; createdAt: string; }
 
 @Injectable({ providedIn: 'root' })
 export class FunTargetService {
@@ -79,8 +80,7 @@ export class FunTargetService {
   updateRound(roundId: string, action: 'open' | 'close' | 'publish', body?: { winningNumber?: number }): Observable<GameRound> {
     const id = encodeURIComponent(roundId);
     if (action === 'publish') {
-      return this.request(this.http.post<ApiRound>(`${this.gameUrl}/rounds/${id}/result`, body ?? null)).pipe(
-        switchMap(() => this.request(this.http.post<ApiRound>(`${this.gameUrl}/rounds/${id}/finalize`, {}))),
+      return this.request(this.http.post<ApiRound>(`${this.gameUrl}/rounds/${id}/publish`, body ?? {})).pipe(
         map((round) => this.toRound(round, 0)),
       );
     }
@@ -92,14 +92,14 @@ export class FunTargetService {
   }
   getJokerSchedules(): Observable<JokerSchedule[]> {
     return this.request(this.http.get<ApiJokerSchedule[]>(`${this.gameUrl}/joker/schedules`)).pipe(map((schedules) => schedules.map((schedule) => ({
-      id: String(schedule.id), roundId: String(schedule.roundId), roundNumber: schedule.roundId,
-      multiplier: schedule.multiplier, status: schedule.active ? 'SCHEDULED' : 'COMPLETED', scheduledAt: schedule.createdAt,
+      id: String(schedule.id), roundId: String(schedule.roundId), roundNumber: schedule.roundNumber,
+      multiplier: schedule.multiplier, status: schedule.active ? 'SCHEDULED' : 'COMPLETED', scheduledAt: schedule.scheduledAt,
     }))));
   }
   scheduleJoker(roundId: number, multiplier: number): Observable<JokerSchedule> {
     return this.request(this.http.post<ApiJokerSchedule>(`${this.gameUrl}/joker/schedules`, { roundId, multiplier })).pipe(map((schedule) => ({
-      id: String(schedule.id), roundId: String(schedule.roundId), roundNumber: schedule.roundId,
-      multiplier: schedule.multiplier, status: 'SCHEDULED', scheduledAt: schedule.createdAt,
+      id: String(schedule.id), roundId: String(schedule.roundId), roundNumber: schedule.roundNumber,
+      multiplier: schedule.multiplier, status: 'SCHEDULED', scheduledAt: schedule.scheduledAt,
     })));
   }
   cancelJokerSchedule(id: string): Observable<void> {
@@ -107,12 +107,14 @@ export class FunTargetService {
   }
   getUserWallet(userId: number): Observable<UserGameWallet> {
     const user$ = this.http.post<{ id: number; name: string; uniqueId: string }>(`${this.apiUrl}/users/get-by-id`, { id: userId });
-    const wallet$ = this.http.get<{ balance: string | number } | null>(`${this.apiUrl}/wallet/${userId}`);
-    const transactions$ = this.http.get<{ id: number; type: string; source: string; amount: string | number; createdAt: string; description: string | null }[]>(`${this.apiUrl}/wallet/${userId}/transactions`);
+    const wallet$ = this.http.get<{ balance: string | number; temporaryWinningBalance: string | number; blockedFromBetting: boolean } | null>(`${this.apiUrl}/wallet/${userId}`);
+    const transactions$ = this.http.get<{ id: number; type: string; source: string; balanceBucket: 'MAIN' | 'TEMPORARY_WINNING'; amount: string | number; createdAt: string; description: string | null }[]>(`${this.apiUrl}/wallet/${userId}/transactions`);
     const requests$ = this.http.get<{ id: number; type: string; amount: string | number; status: string; createdAt: string }[]>(`${this.apiUrl}/wallet/requests/${userId}`);
     return this.request(forkJoin({ user: user$, wallet: wallet$, transactions: transactions$, requests: requests$ })).pipe(map(({ user, wallet, transactions, requests }) => ({
       userId: user.id, userName: user.name, uniqueId: user.uniqueId,
-      mainBalance: wallet ? Number(wallet.balance) : null, temporaryWinningBalance: null, blockedFromBetting: null,
+      mainBalance: wallet ? Number(wallet.balance) : null,
+      temporaryWinningBalance: wallet ? Number(wallet.temporaryWinningBalance) : null,
+      blockedFromBetting: wallet?.blockedFromBetting ?? false,
       pendingRequests: requests.filter((request) => request.status === 'PENDING').map((request) => ({ ...request, amount: Number(request.amount) })),
       transactions: transactions.map((transaction) => ({ ...transaction, amount: Number(transaction.amount) })),
     })));
@@ -128,7 +130,7 @@ export class FunTargetService {
   }
   private toRound(round: ApiRound, totalBetAmount: number): GameRound {
     return {
-      id: String(round.id), roundNumber: round.id, status: round.status, totalBetAmount,
+      id: String(round.id), roundNumber: round.roundNumber, status: round.status, totalBetAmount,
       winningNumber: round.winningNumber, jokerStatus: round.jokerEnabled ? 'ACTIVE' : 'DISABLED',
       scheduledAt: round.scheduledAt, openedAt: round.openedAt, closedAt: round.closedAt,
       createdAt: round.createdAt, resultMode: round.resultMode,
@@ -136,11 +138,13 @@ export class FunTargetService {
   }
   private toSummary(roundId: string, summary: ApiRoundSummary): RoundSummary {
     return {
-      roundId, totalBetAmount: Number(summary.total), winningNumber: null, winningAllocationPercentage: 0,
+      roundId, totalBetAmount: Number(summary.total), winningNumber: summary.winningNumber,
+      winningAllocationPercentage: Number(summary.winningAllocationPercentage),
       adminReportingShare: Number(summary.adminReportingShare), winningAllocationReporting: Number(summary.winningAllocationReporting),
       jokerMultiplier: summary.joker.multiplier, jokerActive: summary.joker.enabled,
-      estimatedWinningPayout: summary.payout, payoutNote: summary.payoutNote,
-      numbers: summary.perNumber.map((item) => ({ number: item.number, totalBets: item.bets, totalAmount: Number(item.total), estimatedPayout: null })),
+      estimatedWinningPayout: Number(summary.payout ?? 0), payoutIsEstimate: summary.payoutIsEstimate,
+      payoutNote: summary.payoutNote,
+      numbers: summary.perNumber.map((item) => ({ number: item.number, totalBets: item.bets, totalAmount: Number(item.total), estimatedPayout: item.number === summary.winningNumber ? Number(summary.payout ?? 0) : 0 })),
     };
   }
   private request<T>(request: Observable<T>): Observable<T> { return request.pipe(timeout({ first: 15000 })); }

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../shared/services/auth.service';
 import { FunTargetService, FunTargetConfiguration, GameRound, RoundSummary, JokerSchedule, UserGameWallet } from '../../../shared/services/fun-target.service';
@@ -25,9 +25,10 @@ export class FunTargetComponent implements OnInit {
   saving = false;
   error = '';
   success = '';
+  confirmation: { title: string; description: string; confirmLabel: string; destructive: boolean; onConfirm: () => void } | null = null;
 
   constructor(public auth: AuthService, private api: FunTargetService, private cdr: ChangeDetectorRef) {}
-  get canManage(): boolean { return this.auth.role === 'admin' || this.auth.role === 'superadmin'; }
+  get canManage(): boolean { return this.auth.role === 'superadmin'; }
   get sharesTotal(): number { return Number(this.config.adminSharePercentage) + Number(this.config.winningAllocationPercentage); }
 
   ngOnInit(): void { this.loadConfiguration(); this.loadRounds(); this.loadSchedules(); }
@@ -42,15 +43,20 @@ export class FunTargetComponent implements OnInit {
   }
   createRound(): void {
     if (!this.canManage || !this.roundStart || Date.parse(this.roundStart) <= Date.now()) { this.error = 'Choose a future round schedule time.'; return; }
-    if (!window.confirm('Create this scheduled round?')) return;
-    this.run(() => this.api.createRound(new Date(this.roundStart).toISOString()), () => { this.success = 'Round created.'; this.loadRounds(); });
+    this.confirmAction('Create round?', 'Are you sure you want to create this scheduled round?', 'Create round', () => {
+      this.run(() => this.api.createRound(new Date(this.roundStart).toISOString()), () => { this.success = 'Round created.'; this.loadRounds(); });
+    });
   }
   roundAction(round: GameRound, action: 'open' | 'close' | 'publish'): void {
     if (!this.canManage) return;
     const body = action === 'publish' && round.resultMode === 'MANUAL' ? { winningNumber: Number(this.winningNumber) } : undefined;
     if (action === 'publish' && round.resultMode === 'MANUAL' && (!this.winningNumber || this.winningNumber < 1 || this.winningNumber > 9)) { this.error = 'Choose a winning number from 1 to 9.'; return; }
-    if (action === 'publish' && !window.confirm('Finalize and publish this result? A finalized result cannot be edited here.')) return;
-    this.run(() => this.api.updateRound(round.id, action, body), () => { this.success = action === 'publish' ? 'Round finalized.' : `Betting ${action === 'open' ? 'opened' : 'closed'}.`; this.loadRounds(); if (this.selectedRound?.id === round.id) this.viewRound(round); });
+    const updateRound = () => this.run(() => this.api.updateRound(round.id, action, body), () => { this.success = action === 'publish' ? 'Round finalized.' : `Betting ${action === 'open' ? 'opened' : 'closed'}.`; this.loadRounds(); if (this.selectedRound?.id === round.id) this.viewRound(round); });
+    if (action === 'publish') {
+      this.confirmAction('Finalize result?', 'Are you sure you want to finalize and publish this result? A finalized result cannot be edited here.', 'Finalize result', updateRound);
+      return;
+    }
+    updateRound();
   }
   viewRound(round: GameRound): void { this.selectedRound = round; this.section = 'summary'; this.summary = null; this.run(() => this.api.getRoundSummary(round.id), (summary) => this.summary = summary); }
   loadWallet(): void {
@@ -62,12 +68,24 @@ export class FunTargetComponent implements OnInit {
     const number = Number(this.scheduleRoundNumber);
     const round = this.rounds.find((item) => item.roundNumber === number && item.status === 'UPCOMING');
     if (!this.canManage || !round || this.schedules.some((item) => item.roundNumber === number && item.status === 'SCHEDULED')) { this.error = 'Choose an upcoming round without an existing Joker schedule.'; return; }
-    if (!window.confirm(`Schedule Joker activation for round ${number}?`)) return;
-    this.run(() => this.api.scheduleJoker(number, this.config.jokerMultiplier), () => { this.success = 'Joker activation scheduled.'; this.scheduleRoundNumber = ''; this.loadSchedules(); });
+    this.confirmAction('Schedule Joker?', `Are you sure you want to schedule Joker activation for round ${number}?`, 'Schedule Joker', () => {
+      this.run(() => this.api.scheduleJoker(Number(round.id), this.config.jokerMultiplier), () => { this.success = 'Joker activation scheduled.'; this.scheduleRoundNumber = ''; this.loadSchedules(); });
+    });
   }
   cancelSchedule(schedule: JokerSchedule): void {
-    if (!this.canManage || schedule.status !== 'SCHEDULED' || !window.confirm(`Cancel Joker activation for round ${schedule.roundNumber}?`)) return;
-    this.run(() => this.api.cancelJokerSchedule(schedule.id), () => { this.success = 'Joker schedule cancelled.'; this.loadSchedules(); });
+    if (!this.canManage || schedule.status !== 'SCHEDULED') return;
+    this.confirmAction('Cancel Joker schedule?', `Are you sure you want to cancel Joker activation for round ${schedule.roundNumber}?`, 'Cancel schedule', () => {
+      this.run(() => this.api.cancelJokerSchedule(schedule.id), () => { this.success = 'Joker schedule cancelled.'; this.loadSchedules(); });
+    }, true);
+  }
+  closeConfirmation(): void { this.confirmation = null; }
+  @HostListener('document:keydown.escape')
+  onEscape(): void { this.closeConfirmation(); }
+  confirmPendingAction(): void {
+    const confirmation = this.confirmation;
+    if (this.loading) return;
+    this.closeConfirmation();
+    confirmation?.onConfirm();
   }
   refresh(): void { this.loadConfiguration(); this.loadRounds(); this.loadSchedules(); }
   canOpenRound(round: GameRound): boolean { return Date.parse(round.scheduledAt) <= Date.now(); }
@@ -79,6 +97,9 @@ export class FunTargetComponent implements OnInit {
   }
   jokerScheduledAt(schedule: JokerSchedule): string | null {
     return this.rounds.find((round) => round.id === schedule.roundId)?.scheduledAt ?? null;
+  }
+  private confirmAction(title: string, description: string, confirmLabel: string, onConfirm: () => void, destructive = false): void {
+    this.confirmation = { title, description, confirmLabel, destructive, onConfirm };
   }
   private loadConfiguration(): void { this.run(() => this.api.getConfiguration(), (config) => this.config = config); }
   private loadRounds(): void { this.run(() => this.api.getRounds(), (rounds) => this.rounds = rounds); }

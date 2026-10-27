@@ -115,7 +115,7 @@ export class UserService {
   getUserById(id: number): Observable<ManagedUser> {
     return this.http.post<ApiUser>(`${this.apiUrl}/users/get-by-id`, { id }).pipe(
       timeout({ first: 15000 }),
-      map((user) => this.toManagedUser(user)),
+      map((user) => this.toManagedUser(user, id)),
     );
   }
 
@@ -141,18 +141,40 @@ export class UserService {
       name: changes.name,
       mobile: changes.mobile,
       ...(this.canManage && changes.agentId !== undefined ? { agentId: changes.agentId } : {}),
-    }).pipe(map((user) => this.toManagedUser(user)));
+    }).pipe(
+      timeout({ first: 15000 }),
+      map((user) => this.toManagedUser(user, id)),
+    );
+  }
+
+  updateOwnProfile(id: number, changes: Pick<ManagedUser, 'name' | 'mobile'>): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/users/${id}`, {
+      name: changes.name,
+      mobile: changes.mobile,
+    }).pipe(timeout({ first: 15000 }));
   }
 
   deleteUser(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/users/${id}`);
   }
 
-  private toManagedUser(user: ApiUser): ManagedUser {
+  private toManagedUser(response: ApiUser, expectedId?: number): ManagedUser {
+    if (
+      !response ||
+      typeof response !== 'object' ||
+      !Number.isSafeInteger(response.id) ||
+      typeof response.name !== 'string' ||
+      typeof response.mobile !== 'string' ||
+      (response.type !== 'user' && response.type !== 'agent') ||
+      (expectedId !== undefined && response.id !== expectedId)
+    ) {
+      throw new Error('The user service returned an invalid or mismatched profile.');
+    }
+
     return {
-      ...user,
-      agentName: user.agentName ?? null,
-      status: user.isActive === false ? 'Inactive' : 'Active',
+      ...response,
+      agentName: response.agentName ?? null,
+      status: response.isActive === false ? 'Inactive' : 'Active',
     };
   }
 
